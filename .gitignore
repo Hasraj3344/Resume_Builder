@@ -1,0 +1,116 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment & API Keys
+.env
+.env.local
+.env.*.local
+.venv
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Output Files (Generated)
+output/
+*.json
+!requirements.txt
+!package.json
+!tsconfig.json
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Data & Vector Store
+data/vector_store/
+*.db
+*.sqlite
+*.sqlite3
+chroma.sqlite3
+
+# Resume/JD Files (Optional - uncomment to include sample files)
+# Comment these out if you want to include sample resumes in git
+data/sample_resumes/*.pdf
+data/sample_resumes/*.docx
+data/sample_jds/*.pdf
+data/sample_jds/*.docx
+# But keep the .txt samples
+!data/sample_jds/*.txt
+
+# Test Files
+test_*.py
+*_test.py
+debug_*.py
+check_*.py
+requirements_check.txt
+
+# Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Documentation (Keep main docs, ignore drafts)
+**/draft_*.md
+**/temp_*.md
+
+# Streamlit
+.streamlit/secrets.toml

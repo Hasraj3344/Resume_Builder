@@ -1,0 +1,62 @@
+Client:   AT&T
+
+Location:    Dallas, TX
+
+Duration: Dec 2025 - Dec 2026
+
+Visa: No H1 B
+
+Pay Rate : $67/hr C2C
+
+Travel Type: On-site (no expenses)
+ 
+
+Job Title:  AI Architect **Onsite Dallas**
+
+Job Requirements:   
+
+ 
+
+AI Architect - 6+ years of experience in following including leading or architecting AI-driven solutions
+
+• Ability to design scalable AI systems and integrate them into enterprise platforms.
+• Experience in designing data pipelines, vector databases, or retrieval-augmented generation (RAG) systems.
+• Familiarity with MLOps tools (MLflow) and observability practices.
+
+Core Technical Requirements:
+Programming Proficiency:
+• Strong experience with Python, plus one or more languages such as Java, JavaScript etc.
+
+AI/ML Expertise:
+• Hands-on experience with machine learning frameworks (TensorFlow, PyTorch, Scikit-learn, etc.)
+• Understanding of deep learning architectures (CNNs, RNNs, Transformers, etc.)
+• Familiarity with LLMs, prompt engineering, and fine-tuning techniques.
+• Strong knowledge of data preprocessing, feature engineering, and model evaluation.
+
+Cloud & Infrastructure:
+• Experience deploying AI/ML models on cloud platforms (Azure).
+• Familiarity with containerization (Docker, Kubernetes) and CI/CD pipelines.
+• Strong understanding of version control (Git), code reviews, and testing.
+• Experience building scalable APIs and microservices for AI applications.
+
+Communication & Collaboration:
+• Excellent written and verbal communication skills — able to translate complex AI concepts for technical and non-technical audiences.
+• Proven ability to work cross-functionally with product managers, data scientists, and business stakeholders.
+• Comfortable leading technical discussions, demos, and documentation.
+
+Educational & Experience Requirements:
+• Bachelor's or master's degree in computer science, Engineering, Mathematics, or related field.
+• 2–5 years of hands-on AI/ML development experience.
+
+Preferred / Bonus Skills:
+• Experience with Generative AI (OpenAI, Anthropic, Hugging Face, etc.)
+• Familiarity with LLM orchestration frameworks (LangChain, Semantic Kernel).
+• Knowledge of responsible AI, model explainability, and bias mitigation.
+• Contribution to open-source AI projects or research publications. (For AI Architect)
+• Experience mentoring junior engineers. (For AI Architect)
+
+Key Soft Skills:
+• Problem-solving mindset with creativity and adaptability.
+• Ownership and accountability for deliverables.
+• Continuous learner — stays current with evolving AI technologies.
+• Team player with collaborative and inclusive communication style.

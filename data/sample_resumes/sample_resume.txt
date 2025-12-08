@@ -1,0 +1,64 @@
+John Doe
+john.doe@email.com | +1-555-123-4567 | linkedin.com/in/johndoe | github.com/johndoe
+San Francisco, CA
+
+PROFESSIONAL SUMMARY
+Experienced Software Engineer with 5+ years of expertise in building scalable web applications and microservices. Strong background in Python, JavaScript, and cloud technologies. Passionate about clean code, system design, and continuous learning.
+
+EXPERIENCE
+
+Senior Software Engineer
+Tech Innovations Inc.
+San Francisco, CA | January 2022 - Present
+• Led development of microservices architecture serving 1M+ daily active users
+• Reduced API response time by 45% through optimization and caching strategies
+• Implemented CI/CD pipelines using Jenkins and Docker, reducing deployment time by 60%
+• Mentored team of 4 junior engineers and conducted code reviews
+• Technologies: Python, FastAPI, PostgreSQL, Redis, AWS, Docker, Kubernetes
+
+Software Engineer
+Digital Solutions Corp
+Remote | June 2019 - December 2021
+• Developed RESTful APIs and backend services using Python and Django
+• Built responsive web applications using React and TypeScript
+• Integrated third-party payment systems (Stripe, PayPal) processing $10M+ annually
+• Implemented comprehensive testing suite achieving 85% code coverage
+• Technologies: Python, Django, React, TypeScript, PostgreSQL, AWS
+
+Junior Developer
+StartupXYZ
+New York, NY | January 2018 - May 2019
+• Contributed to full-stack development of e-commerce platform
+• Fixed 100+ bugs and implemented 50+ feature requests
+• Participated in Agile/Scrum ceremonies and sprint planning
+• Technologies: JavaScript, Node.js, Express, MongoDB
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of California, Berkeley
+Berkeley, CA | Graduated: May 2017
+GPA: 3.7/4.0
+Relevant Coursework: Data Structures, Algorithms, Database Systems, Software Engineering
+
+TECHNICAL SKILLS
+Languages: Python, JavaScript, TypeScript, Java, SQL, HTML, CSS
+Frameworks: FastAPI, Django, Flask, React, Node.js, Express
+Databases: PostgreSQL, MySQL, MongoDB, Redis
+Cloud & DevOps: AWS (EC2, S3, Lambda, RDS), Docker, Kubernetes, Jenkins, CI/CD, Git
+Tools: Jira, Postman, VS Code, Linux
+
+PROJECTS
+
+AI-Powered Resume Analyzer
+• Built RAG-based system to analyze and optimize resumes for ATS compatibility
+• Implemented using LangChain, OpenAI API, and ChromaDB for vector storage
+• Technologies: Python, LangChain, OpenAI, ChromaDB, Streamlit
+
+Personal Finance Tracker
+• Developed web application for tracking expenses and generating financial insights
+• Integrated Plaid API for bank account connections
+• Technologies: React, Node.js, Express, PostgreSQL, Chart.js
+
+CERTIFICATIONS
+AWS Certified Solutions Architect - Associate | Amazon Web Services | 2022
