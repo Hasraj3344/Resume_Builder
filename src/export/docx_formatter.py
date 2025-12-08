@@ -389,12 +389,12 @@ class DOCXFormatter:
                 if categories:
                     # Create table with 2 columns: Category | Skills
                     table = self.doc.add_table(rows=len(categories), cols=2)
-                    table.style = 'Light List Accent 1'
+                    table.style = 'Table Grid'
 
                     # Set column widths
                     table.autofit = False
                     table.allow_autofit = False
-                    widths = (Inches(2.0), Inches(4.5))
+                    widths = (Inches(1.5), Inches(4.5))
 
                     for row_idx, (category, skills_list) in enumerate(categories.items()):
                         row = table.rows[row_idx]
@@ -455,12 +455,12 @@ class DOCXFormatter:
                 if genai_categories:
                     # Create table with 2 columns: Category | Skills
                     table = self.doc.add_table(rows=len(genai_categories), cols=2)
-                    table.style = 'Light List Accent 1'
+                    table.style = 'Table Grid'
 
                     # Set column widths
                     table.autofit = False
                     table.allow_autofit = False
-                    widths = (Inches(2.0), Inches(4.5))
+                    widths = (Inches(1.5), Inches(4.5))
 
                     for row_idx, (category, skills_list) in enumerate(genai_categories.items()):
                         row = table.rows[row_idx]
