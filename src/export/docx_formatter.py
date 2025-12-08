@@ -91,52 +91,165 @@ class DOCXFormatter:
         pBdr.append(bottom)
         pPr.append(pBdr)
 
+    def _add_hyperlink(self, paragraph, text: str, url: str):
+        """
+        Add a hyperlink to a paragraph.
+
+        Args:
+            paragraph: Paragraph object
+            text: Display text
+            url: URL to link to
+        """
+        # Ensure URL has protocol
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+
+        # Create hyperlink element
+        part = paragraph.part
+        r_id = part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
+        hyperlink = OxmlElement('w:hyperlink')
+        hyperlink.set(qn('r:id'), r_id)
+
+        # Create run element
+        new_run = OxmlElement('w:r')
+        rPr = OxmlElement('w:rPr')
+
+        # Style as hyperlink (blue, underlined)
+        rStyle = OxmlElement('w:rStyle')
+        rStyle.set(qn('w:val'), 'Hyperlink')
+        rPr.append(rStyle)
+        new_run.append(rPr)
+
+        # Add text
+        new_run.text = text
+        hyperlink.append(new_run)
+
+        paragraph._p.append(hyperlink)
+
+        return hyperlink
+
     def _add_contact_info(self, resume: Resume):
-        """Add contact information section."""
+        """Add contact information section with clickable hyperlinks."""
         contact = resume.contact
 
         # Center-aligned contact info
         para = self.doc.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        contact_parts = []
-        if contact.email:
-            contact_parts.append(contact.email)
-        if contact.phone:
-            contact_parts.append(contact.phone)
-        if contact.location:
-            contact_parts.append(contact.location)
-        if contact.linkedin:
-            contact_parts.append(f"LinkedIn: {contact.linkedin}")
-        if contact.github:
-            contact_parts.append(f"GitHub: {contact.github}")
+        # Build contact info with hyperlinks
+        first = True
 
-        run = para.add_run(" | ".join(contact_parts))
-        run.font.size = Pt(10)
+        if contact.email:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            self._add_hyperlink(para, contact.email, f"mailto:{contact.email}")
+            first = False
+
+        if contact.phone:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            run = para.add_run(contact.phone)
+            run.font.size = Pt(10)
+            first = False
+
+        if contact.location:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            run = para.add_run(contact.location)
+            run.font.size = Pt(10)
+            first = False
+
+        if contact.linkedin:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            self._add_hyperlink(para, "LinkedIn", contact.linkedin)
+            first = False
+
+        if contact.github:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            self._add_hyperlink(para, "GitHub", contact.github)
+            first = False
+
+        if contact.portfolio:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            self._add_hyperlink(para, "Portfolio", contact.portfolio)
+            first = False
+
+        if contact.website:
+            if not first:
+                run = para.add_run(" | ")
+                run.font.size = Pt(10)
+            self._add_hyperlink(para, "Website", contact.website)
+            first = False
+
         para.space_after = Pt(12)
 
     def _add_bullet_point(self, text: str, bold_keywords: List[str] = None):
         """
-        Add a bullet point with optional keyword bolding.
+        Add a bullet point with optional keyword bolding or markdown bold parsing.
 
         Args:
-            text: Bullet text
+            text: Bullet text (may contain **markdown** bold syntax)
             bold_keywords: Keywords to bold
         """
         para = self.doc.add_paragraph(style='List Bullet')
         para.paragraph_format.left_indent = Inches(0.25)
         para.paragraph_format.space_after = Pt(3)
+        para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify bullet text
 
-        if bold_keywords:
+        # Always check for markdown bold first
+        if '**' in text:
+            self._add_text_with_markdown_bold(para, text)
+        elif bold_keywords:
             # Split text and bold keywords
             self._add_text_with_bold_keywords(para, text, bold_keywords)
         else:
             run = para.add_run(text)
             run.font.size = Pt(11)
 
+    def _add_text_with_markdown_bold(self, paragraph, text: str, font_size: int = 11):
+        """
+        Add text with markdown bold syntax (**text**) parsed and applied.
+
+        Args:
+            paragraph: Paragraph object
+            text: Text with markdown bold syntax
+            font_size: Font size in points
+        """
+        # Pattern to match **text**
+        pattern = r'\*\*(.+?)\*\*'
+
+        # Split text by bold markers
+        parts = re.split(pattern, text)
+
+        is_bold = False
+        for i, part in enumerate(parts):
+            if part:
+                run = paragraph.add_run(part)
+                run.font.size = Pt(font_size)
+
+                # Alternate between regular and bold
+                # Even indices are regular text, odd indices are bold
+                if i % 2 == 1:  # Odd index = captured group = bold text
+                    run.font.bold = True
+
     def _add_text_with_bold_keywords(self, paragraph, text: str, keywords: List[str]):
         """Add text with specific keywords bolded."""
-        # Create regex pattern for keywords
+        # First check if text has markdown bold syntax
+        if '**' in text:
+            self._add_text_with_markdown_bold(paragraph, text)
+            return
+
+        # Otherwise, use keyword-based bolding
         if not keywords:
             run = paragraph.add_run(text)
             run.font.size = Pt(11)
@@ -167,6 +280,58 @@ class DOCXFormatter:
                 # Bold if it's a keyword
                 if any(part.lower() == kw.lower() for kw in sorted_keywords):
                     run.font.bold = True
+
+    def _parse_skills_categories(self, skills: List[str]) -> Dict[str, str]:
+        """
+        Parse skills list into categories.
+
+        Args:
+            skills: List of skill lines (may include category headers with **)
+
+        Returns:
+            Dictionary mapping category names to comma-separated skills
+        """
+        categories = {}
+        current_category = None
+
+        for line in skills:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Check if this is a category header (contains ** or ends with :)
+            if '**' in line:
+                # Extract category name (remove **)
+                category = line.replace('**', '').strip()
+                # Remove trailing colon if present
+                if ':' in category:
+                    parts = category.split(':', 1)
+                    current_category = parts[0].strip()
+                    # If there are skills after the colon, add them
+                    if len(parts) > 1 and parts[1].strip():
+                        categories[current_category] = parts[1].strip()
+                    else:
+                        categories[current_category] = ""
+                else:
+                    current_category = category
+                    categories[current_category] = ""
+            elif current_category:
+                # This line contains skills for the current category
+                if categories[current_category]:
+                    categories[current_category] += ", " + line
+                else:
+                    categories[current_category] = line
+            else:
+                # No category yet, create "Other" category
+                if "Other" not in categories:
+                    categories["Other"] = line
+                else:
+                    categories["Other"] += ", " + line
+
+        # Clean up empty categories
+        categories = {k: v for k, v in categories.items() if v}
+
+        return categories
 
     def _format_date_range(self, start_date: str, end_date: str, is_current: bool) -> str:
         """Format date range."""
@@ -199,24 +364,148 @@ class DOCXFormatter:
         # Professional Summary
         if resume.summary:
             self._add_heading("Professional Summary", level=2, color="1F4788")
-            para = self.doc.add_paragraph(resume.summary)
+            para = self.doc.add_paragraph()
+            para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify text
+
+            # Parse markdown bold in summary
+            if '**' in resume.summary:
+                self._add_text_with_markdown_bold(para, resume.summary)
+            else:
+                run = para.add_run(resume.summary)
+                run.font.size = Pt(11)
+
             para.space_after = Pt(12)
 
         # Technical Skills
         if resume.skills:
             self._add_heading("Technical Skills", level=2, color="1F4788")
 
-            # Group skills or list them
-            skills_text = ", ".join(resume.skills)
-            para = self.doc.add_paragraph()
+            # Check if skills are in categorized format (has ** headers)
+            # Parse skills into categories
+            if resume.skills and '**' in str(resume.skills[0]):
+                # Categorized format - create a table
+                categories = self._parse_skills_categories(resume.skills)
 
-            if bold_keywords:
-                self._add_text_with_bold_keywords(para, skills_text, bold_keywords)
+                if categories:
+                    # Create table with 2 columns: Category | Skills
+                    table = self.doc.add_table(rows=len(categories), cols=2)
+                    table.style = 'Light List Accent 1'
+
+                    # Set column widths
+                    table.autofit = False
+                    table.allow_autofit = False
+                    widths = (Inches(2.0), Inches(4.5))
+
+                    for row_idx, (category, skills_list) in enumerate(categories.items()):
+                        row = table.rows[row_idx]
+
+                        # Category cell (left column)
+                        category_cell = row.cells[0]
+                        category_para = category_cell.paragraphs[0]
+                        category_para.alignment = WD_ALIGN_PARAGRAPH.LEFT  # Align category left
+                        category_run = category_para.add_run(category)
+                        category_run.font.bold = True
+                        category_run.font.size = Pt(11)
+                        category_cell.width = widths[0]
+
+                        # Skills cell (right column)
+                        skills_cell = row.cells[1]
+                        skills_para = skills_cell.paragraphs[0]
+                        skills_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify skills text
+                        skills_run = skills_para.add_run(skills_list)
+                        skills_run.font.size = Pt(11)
+                        skills_cell.width = widths[1]
+
+                    # Add space after table
+                    self.doc.add_paragraph().space_after = Pt(12)
+                else:
+                    # Fallback to paragraph format if parsing fails
+                    for skill_line in resume.skills:
+                        para = self.doc.add_paragraph()
+                        if '**' in skill_line:
+                            self._add_text_with_markdown_bold(para, skill_line)
+                        else:
+                            run = para.add_run(skill_line)
+                            run.font.size = Pt(11)
+                        para.space_after = Pt(3)
             else:
-                run = para.add_run(skills_text)
-                run.font.size = Pt(11)
+                # Simple comma-separated list
+                skills_text = ", ".join(resume.skills)
+                para = self.doc.add_paragraph()
 
-            para.space_after = Pt(12)
+                if '**' in skills_text:
+                    self._add_text_with_markdown_bold(para, skills_text)
+                elif bold_keywords:
+                    self._add_text_with_bold_keywords(para, skills_text, bold_keywords)
+                else:
+                    run = para.add_run(skills_text)
+                    run.font.size = Pt(11)
+
+                para.space_after = Pt(12)
+
+        # GenAI/ML Skills (Separate Section)
+        if resume.genai_skills:
+            self._add_heading("GenAI & Machine Learning Skills", level=2, color="1F4788")
+
+            # Check if GenAI skills are in categorized format
+            if resume.genai_skills and '**' in str(resume.genai_skills[0]):
+                # Categorized format - create a table
+                genai_categories = self._parse_skills_categories(resume.genai_skills)
+
+                if genai_categories:
+                    # Create table with 2 columns: Category | Skills
+                    table = self.doc.add_table(rows=len(genai_categories), cols=2)
+                    table.style = 'Light List Accent 1'
+
+                    # Set column widths
+                    table.autofit = False
+                    table.allow_autofit = False
+                    widths = (Inches(2.0), Inches(4.5))
+
+                    for row_idx, (category, skills_list) in enumerate(genai_categories.items()):
+                        row = table.rows[row_idx]
+
+                        # Category cell (left column)
+                        category_cell = row.cells[0]
+                        category_para = category_cell.paragraphs[0]
+                        category_run = category_para.add_run(category)
+                        category_run.font.bold = True
+                        category_run.font.size = Pt(11)
+                        category_cell.width = widths[0]
+
+                        # Skills cell (right column)
+                        skills_cell = row.cells[1]
+                        skills_para = skills_cell.paragraphs[0]
+                        skills_run = skills_para.add_run(skills_list)
+                        skills_run.font.size = Pt(11)
+                        skills_cell.width = widths[1]
+
+                    # Add space after table
+                    self.doc.add_paragraph().space_after = Pt(12)
+                else:
+                    # Fallback to paragraph format
+                    for skill_line in resume.genai_skills:
+                        para = self.doc.add_paragraph()
+                        if '**' in skill_line:
+                            self._add_text_with_markdown_bold(para, skill_line)
+                        else:
+                            run = para.add_run(skill_line)
+                            run.font.size = Pt(11)
+                        para.space_after = Pt(3)
+            else:
+                # Simple comma-separated list
+                genai_skills_text = ", ".join(resume.genai_skills)
+                para = self.doc.add_paragraph()
+
+                if '**' in genai_skills_text:
+                    self._add_text_with_markdown_bold(para, genai_skills_text)
+                elif bold_keywords:
+                    self._add_text_with_bold_keywords(para, genai_skills_text, bold_keywords)
+                else:
+                    run = para.add_run(genai_skills_text)
+                    run.font.size = Pt(11)
+
+                para.space_after = Pt(12)
 
         # Professional Experience
         if resume.experience:

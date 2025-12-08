@@ -3,7 +3,7 @@
 from typing import List, Dict, Optional
 import copy
 import re
-from src.models import Resume, JobDescription, Experience
+from src.models import Resume, JobDescription, Experience, Project
 from src.generation.llm_service import LLMService, get_default_llm_service
 from src.generation.prompts import PromptTemplates
 from src.analysis.skill_matcher import SkillMatcher
@@ -28,7 +28,7 @@ class ResumeGenerator:
         experience: Experience,
         jd: JobDescription,
         match_results: Optional[Dict] = None,
-        max_bullets: int = 7
+        max_bullets: int = 25
     ) -> Experience:
         """
         Optimize experience bullets for a specific job description.
@@ -67,7 +67,7 @@ class ResumeGenerator:
 
         # Generate optimized bullets
         try:
-            optimized_text = self.llm_service.generate(prompt, temperature=0.7, max_tokens=800)
+            optimized_text = self.llm_service.generate(prompt, temperature=0.7, max_tokens=2000)
 
             # Parse the generated bullets
             optimized_bullets = self._parse_bullets_from_response(optimized_text)
@@ -86,17 +86,27 @@ class ResumeGenerator:
     def _extract_years_from_summary(self, summary: str) -> str:
         """Extract years of experience from summary text."""
         # Pattern: "3+ years", "5 years", "over 3 years", etc.
+        # Ordered from MOST specific to LEAST specific (important!)
         patterns = [
-            r'(\d+\+?)\s+years?\s+of\s+experience',
-            r'over\s+(\d+)\s+years',
-            r'(\d+)\s+years?\s+in',
-            r'with\s+(\d+\+?)\s+years',
+            r'over\s+(\d+\+?)\s+years?\s+of\s+hands-on\s+experience',  # "over 5+ years of hands-on experience" (MOST specific)
+            r'(\d+\+?)\s+years?\s+of\s+hands-on\s+experience',  # "5+ years of hands-on experience"
+            r'with\s+over\s+(\d+\+?)\s+years',         # "with over 5+ years"
+            r'over\s+(\d+\+?)\s+years',                # "over 5 years"
+            r'with\s+(\d+\+?)\s+years',                # "with 5+ years"
+            r'(\d+\+?)\s+years?\s+of\s+experience',    # "5+ years of experience"
+            r'(\d+\+?)\s+years?\s+in',                 # "5 years in"
+            r'(\d+\+?)\s+years?\s+\w+',                # "5+ years [any word]" (more flexible)
+            r'(\d+\+?)\s+years?',                      # "5+ years" (catch-all, LEAST specific)
         ]
 
-        for pattern in patterns:
+        for i, pattern in enumerate(patterns, 1):
             match = re.search(pattern, summary, re.IGNORECASE)
             if match:
                 years = match.group(1)
+                matched_text = match.group(0)
+                match_position = match.start()
+                context = summary[max(0, match_position-20):min(len(summary), match_position+len(matched_text)+20)]
+                
                 if '+' not in years:
                     years += '+'
                 return years
@@ -125,8 +135,10 @@ class ResumeGenerator:
         # Extract years from original summary
         years_experience = self._extract_years_from_summary(original_summary)
         if not years_experience and jd.years_of_experience:
+            print(f"    ⚠️  No years of experience found in summary, using JD years of experience: {jd.years_of_experience}")
             years_experience = jd.years_of_experience
-
+        else:
+            print(f"    ✓ Found years of experience in summary: {years_experience} from JD: {jd.years_of_experience}")
         prompt = self.prompt_templates.get_summary_optimization_prompt(
             original_summary=original_summary,
             jd_overview=jd.overview or jd.responsibilities[0] if jd.responsibilities else "",
@@ -174,8 +186,10 @@ class ResumeGenerator:
             )
 
         try:
-            enhanced = self.llm_service.generate(prompt, temperature=0.7, max_tokens=200)
-            return enhanced.strip().lstrip('•').strip()
+            enhanced = self.llm_service.generate(prompt, temperature=0.7, max_tokens=150)
+            # Clean up any remaining bullet symbols and bold markers if needed
+            enhanced = enhanced.strip().lstrip('•▪-*➤').strip()
+            return enhanced
 
         except Exception as e:
             print(f"    ⚠️  Error enhancing bullet: {e}")
@@ -205,7 +219,7 @@ class ResumeGenerator:
         )
 
         try:
-            optimized_text = self.llm_service.generate(prompt, temperature=0.5, max_tokens=400)
+            optimized_text = self.llm_service.generate(prompt, temperature=0.5, max_tokens=800)
 
             # Parse skills from response
             skills = self._parse_skills_from_response(optimized_text)
@@ -217,6 +231,67 @@ class ResumeGenerator:
             print(f"    ⚠️  Error optimizing skills: {e}")
             return current_skills
 
+    def optimize_project(
+        self,
+        project: Project,
+        jd: JobDescription,
+        max_bullets: int = 8
+    ) -> Project:
+        """
+        Optimize a project section for job description.
+
+        Args:
+            project: Project to optimize
+            jd: Job description
+            max_bullets: Maximum bullets to generate (default 8)
+
+        Returns:
+            Optimized Project object
+        """
+        print(f"\n  Optimizing project: {project.name}...")
+
+        # Extract JD requirements and technologies
+        jd_requirements = jd.responsibilities[:5] if jd.responsibilities else []
+        jd_technologies = jd.required_skills + jd.preferred_skills
+
+        # Generate optimization prompt
+        prompt = self.prompt_templates.get_project_optimization_prompt(
+            project_name=project.name,
+            project_description=project.description or "",
+            project_bullets=project.bullets,
+            project_technologies=project.technologies,
+            jd_requirements=jd_requirements,
+            jd_technologies=jd_technologies
+        )
+
+        # Generate optimized bullets
+        try:
+            optimized_text = self.llm_service.generate(prompt, temperature=0.7, max_tokens=1500)
+
+            # Parse bullets from response
+            optimized_bullets = self._parse_bullets_from_response(optimized_text)
+
+            # Limit to max_bullets
+            if len(optimized_bullets) > max_bullets:
+                optimized_bullets = optimized_bullets[:max_bullets]
+
+            # Create optimized project
+            optimized_project = Project(
+                name=project.name,
+                description=project.description,
+                technologies=project.technologies,
+                bullets=optimized_bullets,
+                url=project.url,
+                date=project.date
+            )
+
+            print(f"    ✓ Generated {len(optimized_bullets)} optimized bullets")
+            return optimized_project
+
+        except Exception as e:
+            print(f"    ⚠️  Error optimizing project: {e}")
+            return project  # Return original on error
+
     def generate_optimized_resume(
         self,
         resume: Resume,
@@ -224,7 +299,8 @@ class ResumeGenerator:
         match_results: Optional[Dict] = None,
         optimize_summary: bool = True,
         optimize_skills: bool = True,
-        optimize_all_experiences: bool = True
+        optimize_all_experiences: bool = True,
+        optimize_projects: bool = True
     ) -> Resume:
         """
         Generate fully optimized resume for a job description.
@@ -236,6 +312,7 @@ class ResumeGenerator:
             optimize_summary: Whether to optimize summary
             optimize_skills: Whether to optimize skills
             optimize_all_experiences: Whether to optimize all experiences
+            optimize_projects: Whether to optimize projects
 
         Returns:
             Optimized Resume object
@@ -286,6 +363,22 @@ class ResumeGenerator:
                 jd=jd
             )
 
+        # Optimize projects
+        if optimize_projects and resume.projects:
+            optimized_projects = []
+            num_projects_to_optimize = min(3, len(resume.projects))  # Optimize top 3 projects
+
+            for project in resume.projects[:num_projects_to_optimize]:
+                optimized_proj = self.optimize_project(
+                    project=project,
+                    jd=jd
+                )
+                optimized_projects.append(optimized_proj)
+
+            # Keep remaining projects as-is
+            optimized_projects.extend(resume.projects[num_projects_to_optimize:])
+            optimized_resume.projects = optimized_projects
+
         print("\n" + "=" * 60)
         print("✓ RESUME OPTIMIZATION COMPLETE")
         print("=" * 60)
@@ -293,7 +386,7 @@ class ResumeGenerator:
         return optimized_resume
 
     def _parse_bullets_from_response(self, response: str) -> List[str]:
-        """Parse bullet points from LLM response."""
+        """Parse bullet points from LLM response (ATS-friendly format)."""
         bullets = []
 
         # Split by lines
@@ -303,46 +396,79 @@ class ResumeGenerator:
             line = line.strip()
 
             # Skip empty lines and headers
-            if not line or line.lower().startswith(('optimized', 'rewritten', 'bullets:', 'bullet')):
+            if not line or line.lower().startswith(('optimized', 'rewritten', 'bullets:', 'bullet', 'output', 'format:')):
                 continue
 
-            # Remove bullet symbols and numbering
-            line = line.lstrip('•▪-*123456789.').strip()
+            # Remove any bullet symbols and numbering that might still be present
+            line = line.lstrip('•▪-*➤123456789.').strip()
 
-            if line and len(line) > 20:  # Must be substantial
+            # Skip lines that are too short (likely headers or artifacts)
+            if line and len(line) > 15:  # Must be substantial
                 bullets.append(line)
 
         return bullets
 
     def _parse_skills_from_response(self, response: str) -> List[str]:
-        """Parse skills list from LLM response."""
+        """
+        Parse skills list from LLM response (ATS-friendly format with categories).
+
+        Returns list of categorized skill lines for table formatting in DOCX.
+        Format: ["**Category**: skill1, skill2, skill3", ...]
+        """
         skills = []
 
         # Remove any headers
-        response = response.replace('OPTIMIZED SKILLS:', '').replace('Skills:', '').strip()
+        response = response.replace('OPTIMIZED SKILLS:', '').replace('Skills:', '').replace('TECHNICAL SKILLS TABLE:', '').strip()
 
         # Split by lines
         lines = response.split('\n')
+
+        current_category = None
+        current_skills = []
 
         for line in lines:
             line = line.strip()
 
             if not line:
+                # Empty line - save current category if any
+                if current_category and current_skills:
+                    skills.append(f"**{current_category}**: {', '.join(current_skills)}")
+                    current_category = None
+                    current_skills = []
                 continue
 
-            # Check if it's a categorized line (Category: skills)
-            if ':' in line:
+            # Check if this is a category header line with format: **Category**: skills OR **Category** (on its own line)
+            if line.startswith('**') and ('**:' in line or line.endswith('**')):
+                # Save previous category if any
+                if current_category and current_skills:
+                    skills.append(f"**{current_category}**: {', '.join(current_skills)}")
+                    current_skills = []
+
+                # Parse new category
+                if '**:' in line or '**: ' in line:
+                    # Format: **Category**: skill1, skill2
+                    # Keep the line as-is (already has proper format)
+                    skills.append(line)
+                    current_category = None
+                else:
+                    # Format: **Category** (skills on next line)
+                    current_category = line.replace('**', '').strip()
+            elif current_category:
+                # Skills for current category (on separate line after category header)
+                category_skills = [s.strip() for s in line.split(',') if s.strip()]
+                current_skills.extend(category_skills)
+            elif ':' in line and not line.startswith('**'):
+                # Format without **: "Category: skill1, skill2"
+                # Add ** markers
                 parts = line.split(':', 1)
                 if len(parts) == 2:
-                    skills_part = parts[1]
-                else:
-                    skills_part = line
-            else:
-                skills_part = line
+                    category = parts[0].strip()
+                    skills_part = parts[1].strip()
+                    skills.append(f"**{category}**: {skills_part}")
 
-            # Split by commas
-            line_skills = [s.strip() for s in skills_part.split(',') if s.strip()]
-            skills.extend(line_skills)
+        # Don't forget last category
+        if current_category and current_skills:
+            skills.append(f"**{current_category}**: {', '.join(current_skills)}")
 
         return skills
 

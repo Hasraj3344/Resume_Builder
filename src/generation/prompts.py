@@ -41,17 +41,24 @@ KEYWORDS TO INCORPORATE (naturally):
 {keywords_str}
 
 GUIDELINES:
-1. Use the STAR method structure (Situation/Task → Action → Result)
+1. Use the WHR method structure (What you did → How you did it → Result achieved)
 2. Start with a strong action verb (Led, Architected, Optimized, Implemented, etc.)
 3. Naturally incorporate the missing keywords where relevant
 4. Quantify results with specific metrics when possible (%, numbers, time saved)
 5. Match the terminology and tone of the job description
-6. Keep it concise (1-2 lines, maximum 150 words)
+6. Keep it detailed but concise (20-30 words)
 7. Focus on impact and outcomes
 8. Maintain truthfulness - don't fabricate achievements
+9. Mark important keywords for bolding using **keyword** format (technologies, tools, methodologies)
+
+ATS-FRIENDLY FORMATTING:
+• Do NOT use bullet symbols (•, -, *, ➤) at the beginning
+• Keep formatting Word-compatible (plain text with bold keywords only)
+• Do NOT bold entire sentences - only keywords, technologies, and key terms
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 OUTPUT FORMAT:
-Return only the rewritten bullet point, nothing else. Start with a bullet symbol (•).
+Return only the rewritten bullet point without any bullet symbol at the start. Wrap keywords that should be bold in **double asterisks** like this: **keyword**. These will be converted to actual bold formatting in the final document.
 
 REWRITTEN BULLET:"""
 
@@ -100,20 +107,26 @@ YOUR TASK:
 Rewrite and optimize these experience bullets to maximize relevance for this role.
 
 REQUIREMENTS:
-1. Rewrite each bullet using the STAR method (Situation/Task → Action → Result)
+1. Rewrite each bullet using the WHR method (What → How → Result)
 2. Start each bullet with strong action verbs (Architected, Spearheaded, Optimized, etc.)
 3. Naturally incorporate missing keywords where they fit authentically
 4. Quantify achievements with specific metrics (%, $, time saved, scale)
 5. Emphasize technologies and skills mentioned in the job responsibilities
-6. Keep each bullet to 1-2 lines (max 150 words)
+6. Keep each bullet detailed yet concise (20-30 words)
 7. Maintain authenticity - don't fabricate achievements
 8. Order bullets by relevance to the job requirements (most relevant first)
+9. Include quantifiable outcomes wherever possible
+10. Mark important keywords for bolding using **keyword** format (technologies, tools, client names)
+
+ATS-FRIENDLY FORMATTING RULES:
+• Do NOT use bullet symbols (•, -, *, ➤) at the beginning of each bullet
+• Keep formatting Word-compatible (plain text with bold keywords only)
+• Do NOT bold entire sentences - only keywords, technologies, client names, and key terms
+• Maintain consistent spacing - one blank line between bullets
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 OUTPUT FORMAT:
-Return 5-7 rewritten bullets in this exact format:
-• [Bullet point 1]
-• [Bullet point 2]
-...
+Return 20-25 rewritten bullets (plain text, no bullet symbols at start). Each bullet on a new line with one blank line gap. Wrap keywords that should be bold in **double asterisks** like this: **DataBricks**, **Azure**, **Python**. These will be converted to actual bold formatting.
 
 OPTIMIZED BULLETS:"""
 
@@ -166,7 +179,7 @@ KEY SKILLS TO HIGHLIGHT:
 {skills_text}
 {years_instruction}
 YOUR TASK:
-Rewrite the professional summary to perfectly align with this specific role.
+Rewrite the professional summary to perfectly align with this specific role and maximize ATS compatibility.
 
 REQUIREMENTS:
 1. Open with a strong professional title/identity including years of experience
@@ -176,9 +189,18 @@ REQUIREMENTS:
 5. Focus on value proposition and key strengths
 6. Use industry-standard terminology
 7. Make it ATS-friendly (keyword-rich but natural)
+8. Mark important keywords for bolding using **keyword** format (technologies, methodologies)
+9. Avoid over-bolding - only bold the most critical 5-7 keywords
+
+ATS-FRIENDLY FORMATTING:
+• Use plain text with selective bold for key technologies
+• Do NOT use special characters, symbols, or complex formatting
+• Ensure Word-compatibility
+• Keep professional, concise, and keyword-rich
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 OUTPUT FORMAT:
-Return only the rewritten summary, no additional text.
+Return only the rewritten summary paragraph (no bullet points). Wrap keywords that should be bold in **double asterisks** like this: **Python**, **Azure**, **Data Engineering**. These will be converted to actual bold formatting in the final document.
 
 OPTIMIZED SUMMARY:"""
 
@@ -212,22 +234,29 @@ YOUR TASK:
 Transform this into a powerful achievement statement that demonstrates clear impact and value.
 
 REQUIREMENTS:
-1. Use the STAR method structure (Situation → Action → Result)
+1. Use the WHR method structure (What → How → Result)
 2. Start with a powerful action verb
 3. Focus on the RESULT and IMPACT{metrics_instruction}
 4. Make it specific and concrete
-5. Keep it concise (1-2 lines)
+5. Keep it detailed but concise (20-30 words)
 6. Maintain authenticity
+7. Mark important keywords for bolding using **keyword** format
+
+ATS-FRIENDLY FORMATTING:
+• Do NOT use bullet symbols (•, -, *, ➤) at the beginning
+• Keep formatting Word-compatible (plain text with bold keywords only)
+• Do NOT bold entire sentences - only keywords, technologies, and key terms
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 EXAMPLES OF GOOD TRANSFORMATIONS:
 Before: "Worked on data pipelines"
-After: "Architected and deployed 15+ production data pipelines processing 2TB+ daily data, reducing processing time by 40%"
+After: "Architected and deployed 15+ production **data pipelines** using **Databricks** and **PySpark**, processing 2TB+ daily data and reducing processing time by 40%"
 
 Before: "Improved system performance"
-After: "Optimized database queries and implemented caching strategies, improving API response time by 65% (from 800ms to 280ms)"
+After: "Optimized **database queries** and implemented **caching strategies** in **Redis**, improving API response time by 65% (from 800ms to 280ms)"
 
 OUTPUT FORMAT:
-Return only the enhanced bullet point.
+Return only the enhanced bullet point without bullet symbol at start. Wrap keywords that should be bold in **double asterisks**. These will be converted to actual bold formatting in the final document.
 
 ENHANCED BULLET:"""
 
@@ -266,12 +295,97 @@ REQUIREMENTS:
 2. Only add keywords that fit naturally and authentically
 3. Keep the bullet professional and readable
 4. Don't sacrifice clarity for keyword density
-5. Keep it concise (1-2 lines)
+5. Keep it detailed but concise (20-30 words)
+6. Mark important keywords for bolding using **keyword** format
+
+ATS-FRIENDLY FORMATTING:
+• Do NOT use bullet symbols (•, -, *, ➤) at the beginning
+• Keep formatting Word-compatible (plain text with bold keywords only)
+• Do NOT bold entire sentences - only keywords, technologies, and key terms
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 OUTPUT FORMAT:
-Return only the rewritten bullet.
+Return only the rewritten bullet without bullet symbol at start. Wrap keywords that should be bold in **double asterisks**. These will be converted to actual bold formatting in the final document.
 
 OPTIMIZED BULLET:"""
+
+        return prompt
+
+    @staticmethod
+    def get_project_optimization_prompt(
+        project_name: str,
+        project_description: str,
+        project_bullets: List[str],
+        project_technologies: List[str],
+        jd_requirements: List[str],
+        jd_technologies: List[str]
+    ) -> str:
+        """
+        Generate prompt for optimizing a project section.
+
+        Args:
+            project_name: Project name
+            project_description: Project description
+            project_bullets: Current project bullet points
+            project_technologies: Technologies used in project
+            jd_requirements: Job description requirements
+            jd_technologies: Technologies from JD
+
+        Returns:
+            Formatted prompt string
+        """
+        bullets_text = "\n".join([f"{i+1}. {bullet}" for i, bullet in enumerate(project_bullets)])
+        tech_text = ", ".join(project_technologies) if project_technologies else "Not specified"
+        jd_req_text = "\n".join([f"• {req}" for req in jd_requirements[:5]])
+        jd_tech_text = ", ".join(jd_technologies[:15])
+
+        prompt = f"""You are an expert at optimizing resume project descriptions for ATS and recruiter appeal.
+
+PROJECT DETAILS:
+Name: {project_name}
+Description: {project_description or "Not provided"}
+Technologies: {tech_text}
+
+CURRENT BULLETS:
+{bullets_text if bullets_text else "No bullets provided"}
+
+JOB REQUIREMENTS:
+{jd_req_text}
+
+JOB TECHNOLOGIES:
+{jd_tech_text}
+
+YOUR TASK:
+Optimize this project section to demonstrate relevance for the target role.
+
+REQUIREMENTS:
+1. Rewrite bullets using WHR method (What → How → Result)
+2. Start each bullet with strong action verbs (Developed, Architected, Implemented, Built, Designed)
+3. Naturally incorporate relevant JD technologies and keywords
+4. Quantify results where possible (performance improvements, scale, users, etc.)
+5. Highlight technical depth and problem-solving skills
+6. Keep each bullet detailed yet concise (20-30 words)
+7. Maintain authenticity - only include technologies actually used
+8. Mark important keywords for bolding using **keyword** format
+9. Show impact and real-world application
+
+ATS-FRIENDLY FORMATTING:
+• Do NOT use bullet symbols (•, -, *, ➤) at the beginning
+• Keep formatting Word-compatible (plain text with bold keywords only)
+• Do NOT bold entire sentences - only keywords, technologies, and key terms
+• Use **text** to mark text for bold formatting (will be rendered as bold, not literal asterisks)
+
+PROJECT OPTIMIZATION GUIDELINES:
+• Focus on technical achievements and outcomes
+• Demonstrate problem-solving and technical expertise
+• Align with job requirements without exaggerating
+• Include metrics: users served, performance gains, data processed, etc.
+• Show full development lifecycle if applicable (design → implement → deploy → monitor)
+
+OUTPUT FORMAT:
+Return 5-8 optimized project bullets (plain text, no bullet symbols). Each bullet on a new line with one blank line gap. Wrap keywords in **double asterisks** like this: **React**, **AWS**, **Python**. These will be converted to actual bold formatting.
+
+OPTIMIZED PROJECT BULLETS:"""
 
         return prompt
 
@@ -308,24 +422,46 @@ JOB PREFERRED SKILLS:
 {preferred_text}
 
 YOUR TASK:
-Reorganize and optimize the skills section to maximize relevance for this job.
+Reorganize and optimize the skills section to maximize relevance for this job and ensure ATS compatibility.
 
-REQUIREMENTS:
-1. Prioritize required skills from the job description at the top
-2. Group related skills together
-3. Use exact terminology from the job description where possible
-4. Include skill variations (e.g., "Python (PySpark)" instead of just "Python")
-5. Remove skills irrelevant to this role
-6. Add skill categories if it improves organization
-7. Keep it ATS-friendly (comma-separated or categorized)
+CRITICAL REQUIREMENTS:
+1. **PRESERVE ALL ORIGINAL SKILLS** - Do NOT remove any skills from the candidate's resume
+2. Prioritize required skills from the job description at the top of each category
+3. Group ALL related skills together by category
+4. Use exact terminology from the job description where possible
+5. Include skill variations (e.g., "Python (PySpark)" instead of just "Python")
+6. Use clear category headers (Cloud Platforms, Big Data & Processing, Databases, Programming Languages, DevOps & CI/CD, Analytics & BI, Other Tools)
+7. Keep it ATS-friendly (comma-separated in table format)
+8. Use consistent capitalization and formatting
+9. Place JD-relevant skills at the beginning of each category, then list remaining skills
+
+ATS-FRIENDLY FORMATTING:
+• Use plain text with category headers marked in **double asterisks**
+• Format: **Category Name**
+           skill1, skill2, skill3, skill4
+• Do NOT use tables, graphics, or complex formatting
+• Ensure Word-compatibility
+• Keep clean, modern, and keyword-rich
+• Use **text** to mark category headers for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 OUTPUT FORMAT:
-Return the optimized skills list in this format:
-Category: skill1, skill2, skill3
-Category: skill1, skill2, skill3
+Return ALL skills organized by category. Use this EXACT format (category header with colon, then skills on same line OR next line):
 
-Or if no categories needed:
-skill1, skill2, skill3, skill4...
+**Cloud Platforms**: Azure, AWS, GCP, Azure Data Factory
+
+**Big Data & Processing**: Databricks, Spark, PySpark, Kafka
+
+**Databases**: SQL Server, PostgreSQL, MongoDB, Snowflake, Delta Lake
+
+**Programming Languages**: Python, SQL, Scala, Java
+
+[Continue with other categories...]
+
+IMPORTANT NOTES:
+- The **double asterisks** around category names will be converted to actual bold in the table
+- This will be rendered as a 2-column table: Category | Skills
+- Include EVERY skill from the original list - just reorganize them by category
+- If a skill doesn't fit a category, add it under **Other Tools & Frameworks**
 
 OPTIMIZED SKILLS:"""
 
@@ -371,7 +507,8 @@ Content Focus:
 • Add consulting/project management elements (onsite–offshore coordination, client interaction, stakeholder management)
 • Incorporate measurable outcomes (improved efficiency, reduced downtime, automated processes, enhanced compliance)
 • Use ATS keywords directly from the JD to enhance visibility
-• Highlight all important keywords in **bold** (e.g., **DataBricks**, **Pipeline Development**, **Cloud AWS/Azure**)
+• Mark important keywords for bolding using **double asterisks** (e.g., **DataBricks**, **Pipeline Development**, **Cloud AWS/Azure**)
+• Use **text** to mark text for bold formatting (this will be rendered as bold in the final document, not as literal asterisks)
 
 Stylistic Guidelines:
 • Maintain a crisp, professional, and keyword-rich tone
@@ -386,7 +523,7 @@ JOB DESCRIPTION:
 {job_description}
 
 OUTPUT FORMAT:
-Generate 20-25 professional summary bullet points following the WHR format. Start each bullet point on a new line without bullet symbols. Bold the important keywords using **keyword** format.
+Generate 20-25 professional summary bullet points following the WHR format. Start each bullet point on a new line without bullet symbols. Wrap important keywords in **double asterisks** like this: **keyword**. These will be converted to actual bold formatting in the final document.
 
 PROFESSIONAL SUMMARY:"""
 
@@ -427,10 +564,11 @@ Presentation Format:
   - Other Tools & Frameworks
 
 Content Guidelines:
-• Include only relevant technologies aligned to the job description
+• **PRESERVE ALL SKILLS** from the candidate's resume - Do NOT remove any
+• Include ALL technologies, prioritizing JD-relevant ones first in each category
 • Use ATS-friendly, concise phrasing
 • Maintain consistent formatting and capitalization
-• List technologies in order of relevance
+• Within each category, list JD-relevant technologies first, then remaining technologies
 
 Style:
 • Ensure readability and scanning ease
@@ -444,13 +582,27 @@ JOB DESCRIPTION:
 {jd_text}
 
 OUTPUT FORMAT:
-Generate a categorized technical skills table. Use this format:
+Generate a categorized technical skills table preserving ALL original skills. Use this EXACT format:
 
-**Category Name**
-skill1, skill2, skill3, skill4
+**Cloud Platforms**: Azure, AWS, GCP, Azure Data Factory
 
-**Category Name**
-skill1, skill2, skill3
+**Big Data & Processing**: Databricks, Spark, PySpark, Kafka
+
+**Databases**: SQL Server, PostgreSQL, MongoDB, Snowflake, Delta Lake
+
+**Programming Languages**: Python, SQL, Scala, Java, R
+
+**DevOps & CI/CD**: Git, Docker, Kubernetes, Jenkins, Azure DevOps
+
+**Analytics & BI**: Power BI, Tableau, Looker
+
+**Other Tools & Frameworks**: [remaining skills here]
+
+IMPORTANT NOTES:
+- The **double asterisks** will be rendered as bold in a 2-column table
+- Include EVERY skill from the candidate's original list
+- Just reorganize and categorize them - don't remove any
+- Place JD-relevant skills first within each category
 
 TECHNICAL SKILLS TABLE:"""
 
@@ -505,7 +657,7 @@ Your task is to generate a detailed client/project experience section based on t
 GENERAL RULES:
 • Include quantifiable outcomes wherever possible (e.g., Reduced processing time by 20%, Supported 50+ users)
 • Always align bullet points with keywords from the Job Description
-• Make keywords, client names, and technologies **bold**
+• Mark keywords, client names, and technologies for bolding using **double asterisks**
 • Generate {bullet_count} detailed bullet points
 • Avoid short one-liners; maintain mid-length, detailed, yet concise statements
 • Avoid duplication or repetition
@@ -524,6 +676,7 @@ FORMATTING RULES:
 • No bullet symbols (like •, ➤, –) at the start
 • Use plain bullet format with one space gap after each bullet
 • Do not bold entire sentences — only keywords, client names, and technologies
+• Wrap keywords in **double asterisks** like this: **keyword** (this will be rendered as bold in the final document, not as literal asterisks)
 • Ensure Word-ready formatting
 
 STYLE & WRITING GUIDELINES:

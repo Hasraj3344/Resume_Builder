@@ -32,7 +32,7 @@ class ModificationHandler:
 
         # Implicit setting patterns (e.g., "my email is...", "my github link is...")
         # These are considered 'set' operations
-        implicit_set_fields = ['email', 'phone', 'github', 'linkedin', 'location', 'name']
+        implicit_set_fields = ['email', 'phone', 'github', 'linkedin', 'location', 'name','education_institution', 'education_location', 'education_gpa', 'education_degree', 'education_field_of_study', 'education_graduation_date']
         for field in implicit_set_fields:
             if field in user_lower and (' is ' in user_lower or ' link ' in user_lower):
                 # Check if it's actually providing a value (not asking a question)
@@ -99,12 +99,42 @@ class ModificationHandler:
                 result['new_value'] = skill_match.group(1).strip()
 
         # Location
+        elif 'location' in user_lower and 'education' in user_lower:
+            result['field'] = 'education_location'
+            location_match = re.search(r'(?:to|is)\s+([A-Z][a-zA-Z\s,]+)', user_input)
+            if location_match:
+                result['new_value'] = location_match.group(1).strip()
+        elif 'institution' in user_lower and 'education' in user_lower:
+            result['field'] = 'education_institution'
+            institution_match = re.search(r'(?:to|is)\s+([A-Z][a-zA-Z\s,]+)', user_input)
+            if institution_match:
+                result['new_value'] = institution_match.group(1).strip()
         elif 'location' in user_lower:
             result['field'] = 'location'
             location_match = re.search(r'(?:to|is)\s+([A-Z][a-zA-Z\s,]+)', user_input)
             if location_match:
                 result['new_value'] = location_match.group(1).strip()
-
+        elif 'gpa' in user_lower or 'grade point' in user_lower:
+            result['field'] = 'education_gpa'
+            # Match decimal numbers like 3.5, 3.85, 4.0
+            gpa_match = re.search(r'(?:to|is)\s+(\d+\.\d+)', user_input)
+            if gpa_match:
+                result['new_value'] = gpa_match.group(1).strip()
+        elif ('degree' in user_lower and ('education' in user_lower or 'my degree' in user_lower)) or 'bachelor' in user_lower or 'master' in user_lower:
+            result['field'] = 'education_degree'
+            degree_match = re.search(r'(?:to|is)\s+([A-Z][a-zA-Z\s,]+)', user_input)
+            if degree_match:
+                result['new_value'] = degree_match.group(1).strip()
+        elif 'field of study' in user_lower:
+            result['field'] = 'education_field_of_study'
+            field_of_study_match = re.search(r'(?:to|is)\s+([A-Z][a-zA-Z\s,]+)', user_input)
+            if field_of_study_match:
+                result['new_value'] = field_of_study_match.group(1).strip()
+        elif 'graduation date' in user_lower:
+            result['field'] = 'education_graduation_date'
+            graduation_date_match = re.search(r'(?:to|is)\s+([A-Z][a-z]+,?\s+\d{4})', user_input)
+            if graduation_date_match:
+                result['new_value'] = graduation_date_match.group(1).strip()
         # LinkedIn
         elif 'linkedin' in user_lower:
             result['field'] = 'linkedin'
@@ -203,7 +233,36 @@ class ModificationHandler:
                     return True, f"✓ Added skill: {new_value}"
                 else:
                     return True, f"ℹ️ Skill '{new_value}' already exists"
-
+            elif field == 'education_location':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update education location."
+                resume.education[-1].location = new_value
+                return True, f"✓ Education location updated to: {new_value}"
+            elif field == 'education_institution':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update education institution."
+                resume.education[-1].institution = new_value
+                return True, f"✓ Education institution updated to: {new_value}"
+            elif field == 'education_gpa':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update GPA."
+                resume.education[-1].gpa = new_value
+                return True, f"✓ Education GPA updated to: {new_value}"
+            elif field == 'education_degree':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update degree."
+                resume.education[-1].degree = new_value
+                return True, f"✓ Education degree updated to: {new_value}"
+            elif field == 'education_field_of_study':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update field of study."
+                resume.education[-1].field_of_study = new_value
+                return True, f"✓ Education field of study updated to: {new_value}"
+            elif field == 'education_graduation_date':
+                if not resume.education:
+                    return False, "No education entries found. Cannot update graduation date."
+                resume.education[-1].graduation_date = new_value
+                return True, f"✓ Education graduation date updated to: {new_value}"
             else:
                 return False, f"Unknown field: {field}"
 

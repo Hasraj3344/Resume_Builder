@@ -26,7 +26,7 @@ class ResumeParser:
         'summary': ['summary', 'professional summary', 'objective', 'profile', 'about'],
         'experience': ['experience', 'work experience', 'professional experience', 'employment', 'work history'],
         'education': ['education', 'academic background', 'qualifications'],
-        'skills': ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies'],
+        'skills': ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies','core technical skills'],
         'genai_skills': ['gen ai skill set', 'genai skills', 'ai skills', 'ml skills', 'ai/ml skills'],
         'projects': ['projects', 'personal projects', 'key projects', 'project highlights'],
         'certifications': ['certifications', 'certificates', 'licenses']
