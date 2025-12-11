@@ -32,14 +32,14 @@ st.markdown("""
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1F4788;
+        color: #2596be;
         text-align: center;
         margin-bottom: 2rem;
     }
     .section-header {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #2E5C8A;
+        color: #2596be;
         margin-top: 1.5rem;
         margin-bottom: 1rem;
     }
@@ -227,7 +227,7 @@ def step2_analysis():
 
         match_result = skill_matcher.match_skills(
             required_skills=jd.required_skills,
-            resume_skills=resume.skills,
+            resume_skills=resume.skills+resume.genai_skills,
             experience_text=experience_text
         )
 

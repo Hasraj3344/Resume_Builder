@@ -468,6 +468,7 @@ class DOCXFormatter:
                         # Category cell (left column)
                         category_cell = row.cells[0]
                         category_para = category_cell.paragraphs[0]
+                        category_para.alignment = WD_ALIGN_PARAGRAPH.LEFT  # Align category left
                         category_run = category_para.add_run(category)
                         category_run.font.bold = True
                         category_run.font.size = Pt(11)
@@ -476,6 +477,7 @@ class DOCXFormatter:
                         # Skills cell (right column)
                         skills_cell = row.cells[1]
                         skills_para = skills_cell.paragraphs[0]
+                        skills_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify skills text
                         skills_run = skills_para.add_run(skills_list)
                         skills_run.font.size = Pt(11)
                         skills_cell.width = widths[1]

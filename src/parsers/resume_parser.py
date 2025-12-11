@@ -27,7 +27,7 @@ class ResumeParser:
         'experience': ['experience', 'work experience', 'professional experience', 'employment', 'work history'],
         'education': ['education', 'academic background', 'qualifications'],
         'skills': ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies','core technical skills'],
-        'genai_skills': ['gen ai skill set', 'genai skills', 'ai skills', 'ml skills', 'ai/ml skills'],
+        'genai_skills': ['gen ai skill set', 'genai skills', 'ai skills', 'ml skills', 'ai/ml skills', 'GENAI & MACHINE LEARNING SKILLS'],
         'projects': ['projects', 'personal projects', 'key projects', 'project highlights'],
         'certifications': ['certifications', 'certificates', 'licenses']
     }
@@ -614,7 +614,7 @@ class ResumeParser:
                 skill_lower = skill.lower()
                 if not any(term in skill_lower for term in skip_terms):
                     # Only add if it has substantial content
-                    if len(skill.split()) <= 6:  # Max 6 words for a skill
+                    if len(skill.split()) <= 10:  # Max 10 words for a skill
                         cleaned_skills.append(skill)
 
         # Remove duplicates while preserving order

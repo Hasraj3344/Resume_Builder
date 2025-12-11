@@ -1,0 +1,40 @@
+# Backend Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Database (SQLite - built into Python, no extra dependencies needed!)
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt==4.1.3  # Pin to 4.1.3 for passlib compatibility
+email-validator>=2.1.0  # Required for EmailStr validation
+
+# PayPal Integration
+paypalrestsdk>=1.13.1
+
+# Scheduling (for monthly usage reset)
+apscheduler>=3.10.4
+
+# HTTP client
+requests>=2.31.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Existing dependencies from main requirements.txt
+# (needed if backend calls src/ modules)
+pypdf2>=3.0.0
+pdfplumber>=0.10.0
+python-docx>=1.1.0
+sentence-transformers>=2.2.0
+openai>=1.0.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
