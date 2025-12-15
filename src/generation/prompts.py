@@ -138,7 +138,8 @@ OPTIMIZED BULLETS:"""
         jd_overview: str,
         job_title: str,
         key_skills: List[str],
-        years_experience: str = ""
+        years_experience: str = "",
+        genai_skills: List[str] = None
     ) -> str:
         """
         Generate prompt for optimizing professional summary.
@@ -149,6 +150,7 @@ OPTIMIZED BULLETS:"""
             job_title: Target job title
             key_skills: Most important skills to highlight
             years_experience: Years of experience required
+            genai_skills: GenAI/ML skills if applicable
 
         Returns:
             Formatted prompt string
@@ -164,6 +166,22 @@ Example: "{job_title} with {years_experience} years of experience in..."
 DO NOT change or omit the years. Use the exact value provided: {years_experience}
 """
 
+        genai_instruction = ""
+        if genai_skills and len(genai_skills) > 0:
+            genai_skills_text = ", ".join(genai_skills[:6])
+            genai_instruction = f"""
+GENAI/ML EXPERIENCE REQUIREMENT:
+The candidate has GenAI/ML skills: {genai_skills_text}
+
+You MUST add 1-2 sentences about GenAI/ML experience, such as:
+• "Actively exploring and implementing GenAI solutions including [specific skills]"
+• "Hands-on experience with GenAI technologies such as [specific skills]"
+• "Familiar with GenAI frameworks and tools including [specific skills]"
+• "Building GenAI-powered applications using [specific skills]"
+
+Choose the appropriate level based on the skills listed (implementation, exploration, familiarization).
+"""
+
         prompt = f"""You are an expert resume writer specializing in compelling professional summaries.
 
 TARGET ROLE:
@@ -177,7 +195,7 @@ ORIGINAL SUMMARY:
 
 KEY SKILLS TO HIGHLIGHT:
 {skills_text}
-{years_instruction}
+{years_instruction}{genai_instruction}
 YOUR TASK:
 Rewrite the professional summary to perfectly align with this specific role and maximize ATS compatibility.
 
@@ -185,12 +203,13 @@ REQUIREMENTS:
 1. Open with a strong professional title/identity including years of experience
 2. Highlight the 5-7 most relevant skills and technologies
 3. Match the language and terminology from the job description
-4. Keep it concise: 3-4 sentences (60-80 words)
-5. Focus on value proposition and key strengths
-6. Use industry-standard terminology
-7. Make it ATS-friendly (keyword-rich but natural)
-8. Mark important keywords for bolding using **keyword** format (technologies, methodologies)
-9. Avoid over-bolding - only bold the most critical 5-7 keywords
+4. Write 5-7 sentences (90-120 words) - MORE detailed than typical summaries
+5. If GenAI skills are present, include 1-2 sentences about GenAI/ML experience or projects
+6. Focus on value proposition and key strengths
+7. Use industry-standard terminology
+8. Make it ATS-friendly (keyword-rich but natural)
+9. Mark important keywords for bolding using **keyword** format (technologies, methodologies)
+10. Avoid over-bolding - only bold the most critical 7-10 keywords
 
 ATS-FRIENDLY FORMATTING:
 • Use plain text with selective bold for key technologies

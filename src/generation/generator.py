@@ -117,7 +117,8 @@ class ResumeGenerator:
         self,
         original_summary: str,
         jd: JobDescription,
-        key_skills: List[str]
+        key_skills: List[str],
+        genai_skills: List[str] = None
     ) -> str:
         """
         Optimize professional summary for a job description.
@@ -126,6 +127,7 @@ class ResumeGenerator:
             original_summary: Original summary text
             jd: Job description
             key_skills: Top skills to highlight
+            genai_skills: GenAI/ML skills if applicable
 
         Returns:
             Optimized summary text
@@ -139,16 +141,23 @@ class ResumeGenerator:
             years_experience = jd.years_of_experience
         else:
             print(f"    ✓ Found years of experience in summary: {years_experience} from JD: {jd.years_of_experience}")
+
+        # Check if GenAI skills should be mentioned
+        if genai_skills and len(genai_skills) > 0:
+            print(f"    ✓ Including GenAI/ML skills in summary: {len(genai_skills)} skills")
+
         prompt = self.prompt_templates.get_summary_optimization_prompt(
             original_summary=original_summary,
             jd_overview=jd.overview or jd.responsibilities[0] if jd.responsibilities else "",
             job_title=jd.job_title,
             key_skills=key_skills,
-            years_experience=years_experience
+            years_experience=years_experience,
+            genai_skills=genai_skills
         )
 
         try:
-            optimized_summary = self.llm_service.generate(prompt, temperature=0.7, max_tokens=300)
+            # Increased max_tokens for longer summaries (5-7 sentences)
+            optimized_summary = self.llm_service.generate(prompt, temperature=0.7, max_tokens=400)
             print(f"    ✓ Generated optimized summary")
             return optimized_summary.strip()
 
@@ -338,7 +347,8 @@ class ResumeGenerator:
             optimized_resume.summary = self.optimize_summary(
                 original_summary=resume.summary,
                 jd=jd,
-                key_skills=top_skills
+                key_skills=top_skills,
+                genai_skills=resume.genai_skills if resume.genai_skills else None
             )
 
         # Optimize experiences

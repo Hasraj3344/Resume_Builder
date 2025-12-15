@@ -27,7 +27,7 @@ class ResumeParser:
         'experience': ['experience', 'work experience', 'professional experience', 'employment', 'work history'],
         'education': ['education', 'academic background', 'qualifications'],
         'skills': ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies','core technical skills'],
-        'genai_skills': ['gen ai skill set', 'genai skills', 'ai skills', 'ml skills', 'ai/ml skills', 'GENAI & MACHINE LEARNING SKILLS'],
+        'genai_skills': ['gen ai skill set', 'genai skills', 'ai skills', 'ml skills', 'ai/ml skills', 'genai & machine learning skills'],
         'projects': ['projects', 'personal projects', 'key projects', 'project highlights'],
         'certifications': ['certifications', 'certificates', 'licenses']
     }
@@ -192,13 +192,14 @@ class ResumeParser:
         if linkedin_match:
             contact.linkedin = f"linkedin.com/in/{linkedin_match.group(1)}"
         else:
-            # Look for standalone "LinkedIn" followed by a link or username in next words
-            linkedin_simple = re.search(r'LinkedIn\s*[:|]?\s*(https?://[^\s]+|[\w-]+)', text, re.IGNORECASE)
+            # Look for standalone "LinkedIn" followed by a colon and a link or username
+            # More strict: must have : or be followed by actual URL/username (not just whitespace or pipe)
+            linkedin_simple = re.search(r'LinkedIn\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
             if linkedin_simple:
-                link = linkedin_simple.group(1)
+                link = linkedin_simple.group(1).strip()
                 if link.startswith('http'):
                     contact.linkedin = link
-                elif not link.lower() in ['github', 'link', 'profile']:
+                elif link.lower() not in ['github', 'link', 'profile', 'summary', 'professional', 'email']:
                     contact.linkedin = f"linkedin.com/in/{link}"
 
         # Extract GitHub (full URL or just username)
@@ -207,13 +208,14 @@ class ResumeParser:
         if github_match:
             contact.github = f"github.com/{github_match.group(1)}"
         else:
-            # Look for standalone "GitHub" followed by a link or username
-            github_simple = re.search(r'GitHub\s*[:|]?\s*(https?://[^\s]+|[\w-]+)', text, re.IGNORECASE)
+            # Look for standalone "GitHub" followed by a colon and a link or username
+            # More strict: must have : or be followed by actual URL/username (not just whitespace or pipe)
+            github_simple = re.search(r'GitHub\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
             if github_simple:
-                link = github_simple.group(1)
+                link = github_simple.group(1).strip()
                 if link.startswith('http'):
                     contact.github = link
-                elif not link.lower() in ['linkedin', 'link', 'profile']:
+                elif link.lower() not in ['linkedin', 'link', 'profile', 'summary', 'professional', 'email']:
                     contact.github = f"github.com/{link}"
 
         # Extract name (usually first line or before email)
@@ -238,9 +240,10 @@ class ResumeParser:
 
         # Look for explicit location indicators
         location_patterns = [
-            r'Location[\s:]+([A-Z][a-z]+,\s*[A-Z]{2}(?:,\s*[A-Z]{2,})?)',  # "Location: City, ST"
-            r'\|\s*([A-Z][a-z]+,\s*[A-Z]{2})\s*$',  # "| City, ST" at end of line
-            r'\b([A-Z][a-z]+,\s*[A-Z]{2}(?:,\s*(?:USA|United States)))\b'  # City, ST, USA
+            r'Location[\s:]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*[A-Z]{2}(?:,\s*[A-Z]{2,})?)',  # "Location: City Name, ST"
+            r'\|\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*[A-Z]{2})\s*\|',  # "| City Name, ST |" (pipe-separated)
+            r'\|\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*[A-Z]{2})\s*$',  # "| City Name, ST" at end of line
+            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*[A-Z]{2}(?:,\s*(?:USA|United States)))\b'  # City Name, ST, USA
         ]
 
         for pattern in location_patterns:
@@ -433,14 +436,50 @@ class ResumeParser:
         # Split by bullet points or multiple newlines
         lines = [line.strip() for line in text.split('\n') if line.strip()]
 
-        for line in lines:
+        # Track graduation date from "Graduated:" lines for next education entry
+        pending_graduation_date = None
+
+        for i, line in enumerate(lines):
             # Remove bullet points
             line = re.sub(r'^[•\-*▪●○]\s*', '', line)
+
+            # Check if this is a "Graduated: MM/YYYY" or "Graduation Date: MM/YYYY" line
+            grad_date_match = re.search(r'(?:Graduated|Graduation Date):\s*(\d{2}/\d{4}|\d{4})', line, re.IGNORECASE)
+            if grad_date_match:
+                pending_graduation_date = grad_date_match.group(1)
+                # If we already have an education entry, add the date to it
+                if education_list:
+                    education_list[-1].graduation_date = pending_graduation_date
+                    pending_graduation_date = None
+                continue
+
+            # Pattern 0: "Degree in Field - Institution" (New pattern for this format)
+            # Example: "Master of Science in Computer Science - University of Texas at Arlington"
+            edu_match_dash = re.search(
+                r'^([Mm]aster\s+of\s+[Ss]cience|[Bb]achelor\s+of\s+[Ss]cience|[Mm]aster\s+of\s+[Aa]rts|[Bb]achelor\s+of\s+[Aa]rts|M\.S\.|B\.S\.|M\.A\.|B\.A\.|MBA|PhD|Ph\.D\.)\s+(?:in|:)?\s+([^-]+?)\s*[-–—]\s*(.+)$',
+                line,
+                re.IGNORECASE
+            )
+
+            if edu_match_dash:
+                degree = edu_match_dash.group(1).strip()
+                field = edu_match_dash.group(2).strip()
+                institution = edu_match_dash.group(3).strip()
+
+                edu = Education(
+                    institution=institution,
+                    degree=degree,
+                    field_of_study=field,
+                    graduation_date=pending_graduation_date
+                )
+                education_list.append(edu)
+                pending_graduation_date = None
+                continue
 
             # Pattern 1: "Date Degree: Field, Institution - Location"
             # Example: "05/2024 Master of Science: Computer Science, The University of Texas at Arlington - Arlington, TX, USA"
             edu_match = re.search(
-                r'(?:(\d{2}/\d{4})\s+)?([Mm]aster\s+of\s+[Ss]cience|[Bb]achelor\s+of\s+[Ss]cience|[Mm]aster\s+of\s+[Aa]rts|[Bb]achelor\s+of\s+[Aa]rts|M\.S\.|B\.S\.|M\.A\.|B\.A\.|PhD|Ph\.D\.)(?:\s+in)?\s*:?\s*([^,]+)?,?\s*(.+?)(?:\s*[-–—]\s*(.+))?$',
+                r'(?:(\d{2}/\d{4})\s+)?([Mm]aster\s+of\s+[Ss]cience|[Bb]achelor\s+of\s+[Ss]cience|[Mm]aster\s+of\s+[Aa]rts|[Bb]achelor\s+of\s+[Aa]rts|M\.S\.|B\.S\.|M\.A\.|B\.A\.|MBA|PhD|Ph\.D\.)(?:\s+in)?\s*:?\s*([^,]+)?,?\s*(.+?)(?:\s*[-–—]\s*(.+))?$',
                 line,
                 re.IGNORECASE
             )
