@@ -1,0 +1,1 @@
+select id, resumes_generated from usage_records

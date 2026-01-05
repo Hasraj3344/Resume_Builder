@@ -18,7 +18,7 @@ class Subscription(Base):
             name="check_plan_type"
         ),
         CheckConstraint(
-            "status IN ('active', 'cancelled', 'expired')",
+            "status IN ('active', 'cancelled', 'expired', 'pending')",
             name="check_status"
         ),
     )

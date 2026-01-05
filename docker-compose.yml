@@ -1,24 +1,73 @@
 version: '3.8'
 
 services:
-  resume-builder:
-    build: .
-    container_name: resume-builder-app
-    ports:
-      - "8501:8501"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
-      - LLM_MODEL=${LLM_MODEL:-gpt-3.5-turbo}
-      - VECTOR_DB_PATH=/app/data/vector_store
-    volumes:
-      - ./data:/app/data
-      - ./output:/app/output
+  # Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: resume-builder-backend
     restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      - DATABASE_URL=sqlite:////data/resume_builder.db
+
+      # JWT Secret (CHANGE THIS IN PRODUCTION!)
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-here}
+
+      # OpenAI API
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # PayPal Configuration
+      - PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - PAYPAL_PRO_PLAN_ID=${PAYPAL_PRO_PLAN_ID}
+
+      # CORS - Update with your domain
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:80,http://localhost
+    volumes:
+      # Persistent data storage
+      - ./data:/data
+      - ./output:/app/output
+      - ./uploads:/app/uploads
+    networks:
+      - resume-builder-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: resume-builder-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"  # For future SSL setup
+    depends_on:
+      - backend
+    networks:
+      - resume-builder-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  resume-builder-network:
+    driver: bridge
+
+volumes:
+  data:
+  output:
+  uploads:

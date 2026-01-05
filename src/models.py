@@ -71,7 +71,7 @@ class Project(BaseModel):
 class Certification(BaseModel):
     """Certification entry."""
     name: str
-    issuer: str
+    issuer: Optional[str] = None
     date: Optional[str] = None
     credential_id: Optional[str] = None
     url: Optional[str] = None

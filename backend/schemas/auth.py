@@ -34,6 +34,10 @@ class UserResponse(BaseModel):
     id: str
     email: str
     full_name: Optional[str]
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    profile_pic_path: Optional[str] = None
+    resume_file_path: Optional[str] = None
     is_active: bool
     created_at: datetime
 

@@ -51,44 +51,105 @@ class ResumeParser:
         if not file_path.exists():
             raise FileNotFoundError(f"Resume file not found: {file_path}")
 
-        # Extract text based on file type
+        # Extract text and hyperlinks based on file type
+        hyperlinks = []
         if file_path.suffix.lower() == '.pdf':
             text = self._extract_text_from_pdf(str(file_path))
+            print(f"[PARSER] Extracting hyperlinks from PDF...")
+            hyperlinks = self._extract_hyperlinks_from_pdf(str(file_path))
         elif file_path.suffix.lower() in ['.docx', '.doc']:
             text = self._extract_text_from_docx(str(file_path))
+            print(f"[PARSER] Extracting hyperlinks from DOCX...")
+            hyperlinks = self._extract_hyperlinks_from_docx(str(file_path))
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
 
+        print(f"[PARSER] Found {len(hyperlinks)} hyperlinks in document")
+
         # Parse the text into structured sections
+        print(f"[PARSER] Identifying sections...")
         sections = self._identify_sections(text)
+        print(f"[PARSER] Found sections: {list(sections.keys())}")
 
         # Extract structured data from each section
+        print(f"[PARSER] Parsing contact info...")
+        contact = self._parse_contact(sections.get('contact', '') + '\n' + text[:500], hyperlinks)
+
+        print(f"[PARSER] Parsing summary...")
+        summary = self._parse_summary(sections.get('summary', ''))
+
+        print(f"[PARSER] Parsing experience...")
+        experience = self._parse_experience(sections.get('experience', ''))
+
+        print(f"[PARSER] Parsing education...")
+        education = self._parse_education(sections.get('education', ''))
+
+        print(f"[PARSER] Parsing skills...")
+        skills = self._parse_skills(sections.get('skills', ''))
+
+        print(f"[PARSER] Parsing GenAI skills...")
+        genai_skills = self._parse_genai_skills(sections.get('genai_skills', ''))
+
+        print(f"[PARSER] Parsing projects...")
+        projects = self._parse_projects(sections.get('projects', ''))
+
+        print(f"[PARSER] Parsing certifications...")
+        certifications = self._parse_certifications(sections.get('certifications', ''))
+
+        print(f"[PARSER] Creating Resume object...")
         resume = Resume(
-            contact=self._parse_contact(sections.get('contact', '') + '\n' + text[:500]),
-            summary=self._parse_summary(sections.get('summary', '')),
-            experience=self._parse_experience(sections.get('experience', '')),
-            education=self._parse_education(sections.get('education', '')),
-            skills=self._parse_skills(sections.get('skills', '')),
-            genai_skills=self._parse_genai_skills(sections.get('genai_skills', '')),  # Parse GenAI skills separately
-            projects=self._parse_projects(sections.get('projects', '')),
-            certifications=self._parse_certifications(sections.get('certifications', '')),
+            contact=contact,
+            summary=summary,
+            experience=experience,
+            education=education,
+            skills=skills,
+            genai_skills=genai_skills,
+            projects=projects,
+            certifications=certifications,
             raw_text=text,
             source_file=str(file_path)
         )
 
+        print(f"[PARSER] Resume parsing complete!")
         return resume
 
     def _extract_text_from_pdf(self, file_path: str) -> str:
-        """Extract text from PDF file."""
+        """Extract text from PDF file with fallback."""
         text = ""
+
+        # Try pdfplumber first (better formatting)
         try:
+            print(f"[PDF PARSER] Trying pdfplumber on: {file_path}")
             with pdfplumber.open(file_path) as pdf:
-                for page in pdf.pages:
+                print(f"[PDF PARSER] PDF has {len(pdf.pages)} pages")
+                for page_num, page in enumerate(pdf.pages, 1):
+                    print(f"[PDF PARSER] Extracting page {page_num}/{len(pdf.pages)}")
                     page_text = page.extract_text()
                     if page_text:
                         text += page_text + "\n"
+            print(f"[PDF PARSER] pdfplumber extracted {len(text)} characters")
         except Exception as e:
-            raise ValueError(f"Error extracting text from PDF: {e}")
+            print(f"[PDF PARSER] pdfplumber failed: {str(e)}")
+            print(f"[PDF PARSER] Trying PyPDF2 as fallback...")
+
+            # Fallback to PyPDF2
+            try:
+                import PyPDF2
+                with open(file_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    print(f"[PDF PARSER] PyPDF2 found {len(pdf_reader.pages)} pages")
+                    for page_num, page in enumerate(pdf_reader.pages, 1):
+                        print(f"[PDF PARSER] PyPDF2 extracting page {page_num}/{len(pdf_reader.pages)}")
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text + "\n"
+                print(f"[PDF PARSER] PyPDF2 extracted {len(text)} characters")
+            except Exception as e2:
+                print(f"[PDF PARSER ERROR] Both parsers failed. pdfplumber: {str(e)}, PyPDF2: {str(e2)}")
+                raise ValueError(f"Error extracting text from PDF. Both pdfplumber and PyPDF2 failed: {e2}")
+
+        if not text.strip():
+            raise ValueError("PDF appears to be empty or contains only images")
 
         return text.strip()
 
@@ -106,6 +167,82 @@ class ResumeParser:
             return text.strip()
         except Exception as e:
             raise ValueError(f"Error extracting text from DOCX: {e}")
+
+    def _extract_hyperlinks_from_docx(self, file_path: str) -> List[Dict[str, str]]:
+        """Extract all hyperlinks from DOCX file."""
+        hyperlinks = []
+        try:
+            doc = Document(file_path)
+
+            # Iterate through all paragraphs
+            for paragraph in doc.paragraphs:
+                # Check for hyperlinks in paragraph
+                for run in paragraph.runs:
+                    # Check if run has hyperlink
+                    if run._element.tag.endswith('hyperlink'):
+                        # Get hyperlink URL from relationship
+                        hyperlink_id = run._element.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+                        if hyperlink_id:
+                            url = doc.part.rels[hyperlink_id].target_ref
+                            hyperlinks.append({
+                                'text': run.text,
+                                'url': url
+                            })
+
+                # Also check hyperlinks at paragraph level
+                for hyperlink in paragraph._element.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hyperlink'):
+                    hyperlink_id = hyperlink.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+                    if hyperlink_id and hyperlink_id in doc.part.rels:
+                        url = doc.part.rels[hyperlink_id].target_ref
+                        text = ''.join(node.text for node in hyperlink.iter() if node.text)
+                        hyperlinks.append({
+                            'text': text,
+                            'url': url
+                        })
+
+            print(f"[DOCX HYPERLINKS] Extracted {len(hyperlinks)} hyperlinks")
+            for link in hyperlinks:
+                print(f"  - {link['text']}: {link['url']}")
+
+        except Exception as e:
+            print(f"[DOCX HYPERLINKS] Error extracting hyperlinks: {e}")
+
+        return hyperlinks
+
+    def _extract_hyperlinks_from_pdf(self, file_path: str) -> List[Dict[str, str]]:
+        """Extract all hyperlinks from PDF file."""
+        hyperlinks = []
+        try:
+            import PyPDF2
+
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+
+                for page_num, page in enumerate(pdf_reader.pages):
+                    # Extract annotations (links)
+                    if '/Annots' in page:
+                        annotations = page['/Annots']
+                        for annotation in annotations:
+                            obj = annotation.get_object()
+                            if obj.get('/Subtype') == '/Link':
+                                # Check for URI (external link)
+                                if '/A' in obj and '/URI' in obj['/A']:
+                                    url = obj['/A']['/URI']
+                                    # Try to get the link text from Rect coordinates
+                                    text = url  # Default to URL if no text found
+                                    hyperlinks.append({
+                                        'text': text,
+                                        'url': url
+                                    })
+
+            print(f"[PDF HYPERLINKS] Extracted {len(hyperlinks)} hyperlinks")
+            for link in hyperlinks:
+                print(f"  - {link['text']}: {link['url']}")
+
+        except Exception as e:
+            print(f"[PDF HYPERLINKS] Error extracting hyperlinks: {e}")
+
+        return hyperlinks
 
     def _identify_sections(self, text: str) -> Dict[str, str]:
         """
@@ -167,9 +304,11 @@ class ResumeParser:
 
         return sections
 
-    def _parse_contact(self, text: str) -> ContactInfo:
-        """Parse contact information from text."""
+    def _parse_contact(self, text: str, hyperlinks: List[Dict[str, str]] = None) -> ContactInfo:
+        """Parse contact information from text and extracted hyperlinks."""
         contact = ContactInfo()
+        if hyperlinks is None:
+            hyperlinks = []
 
         # Extract email
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
@@ -186,37 +325,49 @@ class ResumeParser:
             if len(re.sub(r'[^\d]', '', phone)) >= 10:
                 contact.phone = phone
 
-        # Extract LinkedIn (full URL or just username)
-        linkedin_pattern = r'(?:https?://)?(?:www\.)?linkedin\.com/in/([\w-]+)'
-        linkedin_match = re.search(linkedin_pattern, text, re.IGNORECASE)
-        if linkedin_match:
-            contact.linkedin = f"linkedin.com/in/{linkedin_match.group(1)}"
-        else:
-            # Look for standalone "LinkedIn" followed by a colon and a link or username
-            # More strict: must have : or be followed by actual URL/username (not just whitespace or pipe)
-            linkedin_simple = re.search(r'LinkedIn\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
-            if linkedin_simple:
-                link = linkedin_simple.group(1).strip()
-                if link.startswith('http'):
-                    contact.linkedin = link
-                elif link.lower() not in ['github', 'link', 'profile', 'summary', 'professional', 'email']:
-                    contact.linkedin = f"linkedin.com/in/{link}"
+        # First, try to extract LinkedIn and GitHub from hyperlinks (more accurate)
+        for link in hyperlinks:
+            url = link['url'].lower()
+            if 'linkedin.com/in/' in url and not contact.linkedin:
+                # Extract full URL
+                contact.linkedin = link['url']
+                print(f"[CONTACT] LinkedIn from hyperlink: {contact.linkedin}")
+            elif 'github.com/' in url and not contact.github:
+                # Extract full URL
+                contact.github = link['url']
+                print(f"[CONTACT] GitHub from hyperlink: {contact.github}")
 
-        # Extract GitHub (full URL or just username)
-        github_pattern = r'(?:https?://)?(?:www\.)?github\.com/([\w-]+)'
-        github_match = re.search(github_pattern, text, re.IGNORECASE)
-        if github_match:
-            contact.github = f"github.com/{github_match.group(1)}"
-        else:
-            # Look for standalone "GitHub" followed by a colon and a link or username
-            # More strict: must have : or be followed by actual URL/username (not just whitespace or pipe)
-            github_simple = re.search(r'GitHub\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
-            if github_simple:
-                link = github_simple.group(1).strip()
-                if link.startswith('http'):
-                    contact.github = link
-                elif link.lower() not in ['linkedin', 'link', 'profile', 'summary', 'professional', 'email']:
-                    contact.github = f"github.com/{link}"
+        # Fallback: Extract LinkedIn from text (full URL or just username)
+        if not contact.linkedin:
+            linkedin_pattern = r'(?:https?://)?(?:www\.)?linkedin\.com/in/([\w-]+)'
+            linkedin_match = re.search(linkedin_pattern, text, re.IGNORECASE)
+            if linkedin_match:
+                contact.linkedin = f"https://linkedin.com/in/{linkedin_match.group(1)}"
+            else:
+                # Look for standalone "LinkedIn" followed by a colon and a link or username
+                linkedin_simple = re.search(r'LinkedIn\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
+                if linkedin_simple:
+                    link = linkedin_simple.group(1).strip()
+                    if link.startswith('http'):
+                        contact.linkedin = link
+                    elif link.lower() not in ['github', 'link', 'profile', 'summary', 'professional', 'email']:
+                        contact.linkedin = f"https://linkedin.com/in/{link}"
+
+        # Fallback: Extract GitHub from text (full URL or just username)
+        if not contact.github:
+            github_pattern = r'(?:https?://)?(?:www\.)?github\.com/([\w-]+)'
+            github_match = re.search(github_pattern, text, re.IGNORECASE)
+            if github_match:
+                contact.github = f"https://github.com/{github_match.group(1)}"
+            else:
+                # Look for standalone "GitHub" followed by a colon and a link or username
+                github_simple = re.search(r'GitHub\s*:\s*(https?://[^\s|]+|[\w-]{3,})', text, re.IGNORECASE)
+                if github_simple:
+                    link = github_simple.group(1).strip()
+                    if link.startswith('http'):
+                        contact.github = link
+                    elif link.lower() not in ['linkedin', 'link', 'profile', 'summary', 'professional', 'email']:
+                        contact.github = f"https://github.com/{link}"
 
         # Extract name (usually first line or before email)
         lines = [line.strip() for line in text.split('\n') if line.strip()]
@@ -427,7 +578,77 @@ class ResumeParser:
         return experiences
 
     def _parse_education(self, text: str) -> List[Education]:
-        """Parse education entries."""
+        """Parse education entries with timeout protection."""
+        if not text.strip():
+            return []
+
+        # Use simple parser for now (detailed parser has regex issues causing hangs)
+        print(f"[PARSER] Using simple education parser")
+        return self._parse_education_simple(text)
+
+    def _parse_education_simple(self, text: str) -> List[Education]:
+        """Simple fallback education parser with basic extraction."""
+        education_list = []
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # Look for university/college keywords
+            if any(keyword in line.lower() for keyword in ['university', 'college', 'institute', 'school']):
+                # Extract institution and location
+                institution = line.split(',')[0].strip() if ',' in line else line
+                location = line.split(',')[1].strip() if ',' in line and len(line.split(',')) > 1 else None
+
+                # Look at next line for degree
+                degree = None
+                field_of_study = None
+                graduation_date = None
+
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    # Check if next line contains degree keywords
+                    if any(deg in next_line.lower() for deg in ['master', 'bachelor', 'associate', 'phd', 'doctorate', 'm.s', 'b.s', 'mba']):
+                        # Extract degree and field
+                        if ' in ' in next_line.lower():
+                            parts = next_line.split(' in ', 1)
+                            degree = parts[0].strip()
+                            field_of_study = parts[1].strip()
+                        elif ' of ' in next_line.lower():
+                            parts = next_line.split(' of ', 1)
+                            degree = parts[0].strip()
+                            field_of_study = parts[1].strip()
+                        else:
+                            degree = next_line
+                        i += 1  # Skip the degree line
+
+                        # Check next line for graduation date
+                        if i + 1 < len(lines):
+                            date_line = lines[i + 1].strip()
+                            # Simple date extraction (look for 4-digit year)
+                            import re
+                            year_match = re.search(r'\b(19|20)\d{2}\b', date_line)
+                            if year_match:
+                                graduation_date = year_match.group(0)
+                                i += 1  # Skip the date line
+
+                edu = Education(
+                    institution=institution,
+                    degree=degree,
+                    field_of_study=field_of_study,
+                    graduation_date=graduation_date,
+                    location=location,
+                    gpa=None
+                )
+                education_list.append(edu)
+
+            i += 1
+
+        return education_list[:5]  # Limit to 5 entries
+
+    def _parse_education_detailed(self, text: str) -> List[Education]:
+        """Detailed education parser (original implementation)."""
         education_list = []
 
         if not text.strip():
@@ -436,12 +657,67 @@ class ResumeParser:
         # Split by bullet points or multiple newlines
         lines = [line.strip() for line in text.split('\n') if line.strip()]
 
-        # Track graduation date from "Graduated:" lines for next education entry
+        # Track pending data for multi-line education entries
         pending_graduation_date = None
+        pending_institution = None
+        pending_location = None
 
-        for i, line in enumerate(lines):
+        i = 0
+        while i < len(lines):
+            line = lines[i]
             # Remove bullet points
             line = re.sub(r'^[•\-*▪●○]\s*', '', line)
+
+            # NEW PATTERN: Multi-line format
+            # Line 1: "George Mason University, Fairfax, VA"
+            # Line 2: "Master of Science in Information Technology"
+            # Line 3: "August 2022 – May 2024"
+
+            # Check if line contains institution (University, College, etc.) with location
+            inst_loc_match = re.match(
+                r'^((?:The\s+)?(?:.*?\s+)?(?:University|College|Institute|School)[^,]*),\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*[A-Z]{2})',
+                line,
+                re.IGNORECASE
+            )
+
+            if inst_loc_match and i + 1 < len(lines):
+                pending_institution = inst_loc_match.group(1).strip()
+                pending_location = inst_loc_match.group(2).strip()
+
+                # Check next line for degree
+                next_line = lines[i + 1].strip()
+                degree_match = re.match(
+                    r'^((?:Master|Bachelor|Associate|Doctor)(?:\s+of\s+(?:Science|Arts|Engineering|Business Administration))?|M\.S\.|B\.S\.|M\.A\.|B\.A\.|MBA|PhD|Ph\.D\.)\s+(?:in\s+)?(.+?)$',
+                    next_line,
+                    re.IGNORECASE
+                )
+
+                if degree_match:
+                    degree = degree_match.group(1).strip()
+                    field = degree_match.group(2).strip() if degree_match.group(2) else None
+
+                    # Check line after for dates
+                    grad_date = None
+                    if i + 2 < len(lines):
+                        date_line = lines[i + 2].strip()
+                        # Match "Month YYYY – Month YYYY" or "Month YYYY - Month YYYY"
+                        date_match = re.search(r'([A-Z][a-z]+\s+\d{4})\s*[-–—]\s*([A-Z][a-z]+\s+\d{4})', date_line)
+                        if date_match:
+                            grad_date = date_match.group(2)  # End date
+                            i += 1  # Skip date line
+
+                    edu = Education(
+                        institution=pending_institution,
+                        degree=degree,
+                        field_of_study=field,
+                        location=pending_location,
+                        graduation_date=grad_date
+                    )
+                    education_list.append(edu)
+                    pending_institution = None
+                    pending_location = None
+                    i += 2  # Skip institution and degree lines
+                    continue
 
             # Check if this is a "Graduated: MM/YYYY" or "Graduation Date: MM/YYYY" line
             grad_date_match = re.search(r'(?:Graduated|Graduation Date):\s*(\d{2}/\d{4}|\d{4})', line, re.IGNORECASE)
@@ -451,6 +727,7 @@ class ResumeParser:
                 if education_list:
                     education_list[-1].graduation_date = pending_graduation_date
                     pending_graduation_date = None
+                i += 1
                 continue
 
             # Pattern 0: "Degree in Field - Institution" (New pattern for this format)
@@ -506,6 +783,7 @@ class ResumeParser:
                     graduation_date=date
                 )
                 education_list.append(edu)
+                i += 1
             else:
                 # Pattern 2: Try simpler formats
                 # Look for degree keywords
@@ -556,13 +834,119 @@ class ResumeParser:
                     if edu.institution:
                         education_list.append(edu)
 
+            i += 1  # Move to next line
+
         return education_list
 
+    def _split_skills_preserve_groups(self, text: str, delimiter: str) -> List[str]:
+        """Split skills by delimiter but preserve content within parentheses as single units."""
+        skills = []
+        current = ""
+        paren_depth = 0
+
+        for char in text:
+            if char == '(':
+                paren_depth += 1
+                current += char
+            elif char == ')':
+                paren_depth -= 1
+                current += char
+            elif char == delimiter and paren_depth == 0:
+                # Split here
+                skill = current.strip()
+                if skill:
+                    skills.append(skill)
+                current = ""
+            else:
+                current += char
+
+        # Add the last skill
+        skill = current.strip()
+        if skill:
+            skills.append(skill)
+
+        return skills
+
     def _parse_skills(self, text: str) -> List[str]:
-        """Parse skills from text."""
+        """Parse skills from text with timeout protection."""
         if not text.strip():
             return []
 
+        # Use simple parser for now (detailed parser has regex issues causing hangs)
+        print(f"[PARSER] Using simple skills parser")
+        return self._parse_skills_simple(text)
+
+    def _parse_skills_simple(self, text: str) -> List[str]:
+        """Simple fallback skills parser that extracts individual skills."""
+        skills = []
+        # Remove bullet points and asterisks
+        text = re.sub(r'^[•\-*▪●○]\s*', '', text, flags=re.MULTILINE)
+        text = re.sub(r'\*\*', '', text)  # Remove markdown bold
+
+        # Common skill category prefixes to remove
+        category_prefixes = [
+            'cloud platforms?', 'programming languages?', 'databases?', 'big data',
+            'processing', 'analytics', 'devops', 'ci/cd', 'tools?', 'frameworks?',
+            'genai', 'responsible ai', 'methods?', 'other tools?', 'orchestration',
+            'data', 'skills', 'technologies', 'platforms?'
+        ]
+
+        # Create regex pattern for category prefixes
+        category_pattern = r'^(' + '|'.join(category_prefixes) + r')[\s&]+(.+)$'
+
+        # Split by lines
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line or len(line) < 2:
+                continue
+
+            # If line has category with colon (e.g., "Cloud Platforms: Azure, AWS")
+            if ':' in line:
+                # Take only the skills part (after colon)
+                skills_part = line.split(':', 1)[1].strip()
+            else:
+                # Check if line starts with a category prefix (without colon)
+                # e.g., "Cloud Platforms Azure Data Factory"
+                category_match = re.match(category_pattern, line, re.IGNORECASE)
+                if category_match:
+                    # Extract just the skills part (after category)
+                    skills_part = category_match.group(2).strip()
+                else:
+                    skills_part = line
+
+            # Split by common delimiters (comma, pipe, semicolon)
+            for skill in re.split(r'[,|;]', skills_part):
+                skill = skill.strip()
+                # Clean up parentheses and extra text
+                skill = re.sub(r'\s*\([^)]*\)', '', skill)  # Remove (ADF) etc.
+                skill = skill.strip()
+
+                # Filter out noise and keep only meaningful skills
+                if skill and len(skill) >= 2 and len(skill) <= 50:
+                    # Skip common noise words
+                    noise_words = ['skills', 'technologies', 'tools', 'platforms', 'others', 'frameworks']
+                    if skill.lower() not in noise_words:
+                        skills.append(skill)
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_skills = []
+        for skill in skills:
+            skill_lower = skill.lower()
+            if skill_lower not in seen:
+                seen.add(skill_lower)
+                unique_skills.append(skill)
+
+        print(f"[PARSER] Extracted {len(unique_skills)} individual skills")
+        for i, skill in enumerate(unique_skills[:10], 1):
+            print(f"[PARSER]   {i}. {skill}")
+        if len(unique_skills) > 10:
+            print(f"[PARSER]   ... and {len(unique_skills) - 10} more")
+
+        return unique_skills[:100]  # Limit to 100 skills
+
+    def _parse_skills_detailed(self, text: str) -> List[str]:
+        """Detailed skills parser (original implementation)."""
         skills = []
 
         # Remove bullet points and clean up
@@ -595,32 +979,56 @@ class ResumeParser:
 
             # Check if line has category pattern "Category: skills"
             if ':' in line and not line.startswith('http'):
-                parts = line.split(':', 1)
-                if len(parts) == 2:
-                    category = parts[0].strip()
-                    skills_part = parts[1].strip()
+                # Handle multiple categories on same line
+                # Category keywords that indicate a new category section
+                category_keywords = [
+                    'Languages', 'Tools', 'Platforms', 'Technologies', 'Frameworks',
+                    'Management', 'Warehousing', 'Integration', 'Visualization',
+                    'Code', 'Methodologies', 'Skills'
+                ]
 
-                    # Skip if category looks like a section header or is too long
-                    if len(category) > 50:
-                        skills_part = line
+                # Build pattern that matches these keywords at end of category name
+                # Pattern: "Some Words (Language|Tool|Platform|...): "
+                keyword_pattern = '|'.join(category_keywords)
+                category_pattern = rf'([A-Za-z\s]+(?:{keyword_pattern})):\s*'
+                segments = re.split(category_pattern, line)
 
-                    # Split skills by comma
-                    if ',' in skills_part:
-                        line_skills = [s.strip() for s in skills_part.split(',')]
-                    elif '|' in skills_part:
-                        line_skills = [s.strip() for s in skills_part.split('|')]
-                    else:
-                        line_skills = [skills_part]
+                # If we got meaningful segments, process them
+                if len(segments) > 2:
+                    for i in range(1, len(segments), 2):
+                        if i + 1 < len(segments):
+                            skills_part = segments[i + 1].strip()
 
-                    skills.extend(line_skills)
+                            # Split skills by comma, BUT preserve parentheses groups
+                            if ',' in skills_part:
+                                line_skills = self._split_skills_preserve_groups(skills_part, ',')
+                            elif '|' in skills_part:
+                                line_skills = self._split_skills_preserve_groups(skills_part, '|')
+                            else:
+                                line_skills = [skills_part] if skills_part else []
+
+                            skills.extend(line_skills)
                 else:
-                    skills.append(line)
+                    # Simple case - single category: skills pattern
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        skills_part = parts[1].strip()
+
+                        # Split skills by comma, BUT preserve parentheses groups
+                        if ',' in skills_part:
+                            line_skills = self._split_skills_preserve_groups(skills_part, ',')
+                        elif '|' in skills_part:
+                            line_skills = self._split_skills_preserve_groups(skills_part, '|')
+                        else:
+                            line_skills = [skills_part] if skills_part else []
+
+                        skills.extend(line_skills)
             else:
                 # No category, try to split by delimiters
                 if ',' in line:
-                    line_skills = [s.strip() for s in line.split(',')]
+                    line_skills = self._split_skills_preserve_groups(line, ',')
                 elif '|' in line:
-                    line_skills = [s.strip() for s in line.split('|')]
+                    line_skills = self._split_skills_preserve_groups(line, '|')
                 else:
                     # Single skill on the line
                     line_skills = [line]
@@ -859,17 +1267,26 @@ class ResumeParser:
             # Remove bullet points
             line = re.sub(r'^[•\-*▪]\s*', '', line)
 
+            # Skip empty or very short lines
+            if len(line) < 3:
+                continue
+
             # Try to extract issuer and date
             # Pattern: "Certification Name - Issuer (Year)" or similar
-            parts = re.split(r'[-–—,]', line)
+            # BUT preserve hyphens in cert codes like "AZ-900"
+            # Split only on spaced hyphens or commas
+            parts = re.split(r'\s+[-–—]\s+|,', line)
+
+            cert_name = parts[0].strip() if parts else line
+            cert_issuer = parts[1].strip() if len(parts) > 1 else ""
 
             cert = Certification(
-                name=parts[0].strip() if parts else line,
-                issuer=parts[1].strip() if len(parts) > 1 else ""
+                name=cert_name,
+                issuer=cert_issuer
             )
 
             # Look for year
-            year_match = re.search(r'\d{4}', line)
+            year_match = re.search(r'\b\d{4}\b', line)
             if year_match:
                 cert.date = year_match.group(0)
 

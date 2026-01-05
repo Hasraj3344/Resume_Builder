@@ -15,15 +15,32 @@ class AuthService:
     """Service for authentication operations."""
 
     @staticmethod
-    def register_user(db: Session, email: str, password: str, full_name: str = None) -> User:
+    def register_user(
+        db: Session,
+        email: str,
+        password: str,
+        full_name: str = None,
+        phone: str = None,
+        address: str = None,
+        profile_pic_path: str = None,
+        resume_file_path: str = None,
+        resume_text: str = None,
+        resume_parsed_data: dict = None
+    ) -> User:
         """
-        Register a new user.
+        Register a new user with optional profile and resume data.
 
         Args:
             db: Database session
             email: User email
             password: Plain text password
             full_name: Optional full name
+            phone: Optional phone number
+            address: Optional address
+            profile_pic_path: Optional profile picture file path
+            resume_file_path: Optional resume file path
+            resume_text: Optional resume text content
+            resume_parsed_data: Optional parsed resume data as dict
 
         Returns:
             User: Created user
@@ -42,11 +59,17 @@ class AuthService:
         # Hash password
         password_hash = hash_password(password)
 
-        # Create user
+        # Create user with all data
         user = User(
             email=email,
             password_hash=password_hash,
             full_name=full_name,
+            phone=phone,
+            address=address,
+            profile_pic_path=profile_pic_path,
+            resume_file_path=resume_file_path,
+            resume_text=resume_text,
+            resume_parsed_data=resume_parsed_data,
             is_active=True
         )
 

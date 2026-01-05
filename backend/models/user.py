@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, Text, JSON
 from sqlalchemy.orm import relationship
 from backend.database import Base
 
@@ -18,6 +18,16 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+    # Additional profile fields
+    phone = Column(String(50), nullable=True)
+    address = Column(Text, nullable=True)
+    profile_pic_path = Column(String(500), nullable=True)
+
+    # Resume fields
+    resume_file_path = Column(String(500), nullable=True)
+    resume_text = Column(Text, nullable=True)
+    resume_parsed_data = Column(JSON, nullable=True)
 
     # Relationships
     subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")

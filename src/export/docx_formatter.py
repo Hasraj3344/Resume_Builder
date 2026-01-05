@@ -21,6 +21,10 @@ class DOCXFormatter:
             template_style: Template style (professional, modern, minimal)
         """
         self.template_style = template_style
+        self.doc = None  # Will be created per export
+
+    def _create_new_document(self):
+        """Create a new document with proper styling."""
         self.doc = Document()
         self._setup_document_styles()
 
@@ -355,6 +359,9 @@ class DOCXFormatter:
         """
         print(f"\nExporting resume to DOCX: {output_path}")
 
+        # Create a fresh document for this export
+        self._create_new_document()
+
         # Add name
         self._add_heading(resume.contact.full_name, level=1, color="1F4788")
 
@@ -514,8 +521,9 @@ class DOCXFormatter:
             self._add_heading("Professional Experience", level=2, color="1F4788")
 
             for exp in resume.experience:
-                # Company and title
-                self._add_heading(f"{exp.title}", level=3)
+                # Title - only add if not "Unknown"
+                if exp.title and exp.title.lower() != "unknown":
+                    self._add_heading(f"{exp.title}", level=3)
 
                 # Company, location, dates
                 para = self.doc.add_paragraph()
@@ -541,28 +549,48 @@ class DOCXFormatter:
             self._add_heading("Education", level=2, color="1F4788")
 
             for edu in resume.education:
+                # First line: Degree in Field of Study (if available)
                 para = self.doc.add_paragraph()
 
-                # Degree and institution
-                degree_text = f"{edu.degree}"
+                degree_parts = []
+                if edu.degree:
+                    degree_parts.append(edu.degree)
                 if edu.field_of_study:
-                    degree_text += f" in {edu.field_of_study}"
-                degree_text += f" - {edu.institution}"
+                    degree_parts.append(f"in {edu.field_of_study}")
 
-                run = para.add_run(degree_text)
-                run.font.size = Pt(11)
-                run.font.bold = True
+                if degree_parts:
+                    degree_text = " ".join(degree_parts)
+                    run = para.add_run(degree_text)
+                    run.font.size = Pt(11)
+                    run.font.bold = True
 
-                # Graduation date
+                # Second line: Institution, Location (if available)
+                para_inst = self.doc.add_paragraph()
+                inst_parts = []
+                if edu.institution:
+                    inst_parts.append(edu.institution)
+                if edu.location:
+                    inst_parts.append(edu.location)
+
+                if inst_parts:
+                    inst_text = ", ".join(inst_parts)
+                    run_inst = para_inst.add_run(inst_text)
+                    run_inst.font.size = Pt(10)
+                    run_inst.font.italic = True
+
+                # Third line: Graduation Date | GPA (if available)
+                details_parts = []
                 if edu.graduation_date:
-                    para_date = self.doc.add_paragraph()
-                    run_date = para_date.add_run(f"Graduated: {edu.graduation_date}")
-                    run_date.font.size = Pt(10)
-                    run_date.font.italic = True
-
-                # GPA if available
+                    details_parts.append(f"Graduated: {edu.graduation_date}")
                 if edu.gpa:
-                    para_date.add_run(f" | GPA: {edu.gpa}")
+                    details_parts.append(f"GPA: {edu.gpa}")
+
+                if details_parts:
+                    para_details = self.doc.add_paragraph()
+                    details_text = " | ".join(details_parts)
+                    run_details = para_details.add_run(details_text)
+                    run_details.font.size = Pt(10)
+                    run_details.font.color.rgb = RGBColor(0x4A, 0x5C, 0x6A)  # Subtle gray
 
                 para.space_after = Pt(6)
 
@@ -572,11 +600,16 @@ class DOCXFormatter:
 
             for cert in resume.certifications:
                 para = self.doc.add_paragraph(style='List Bullet')
-                cert_text = cert.name
-                if cert.issuer:
-                    cert_text += f" - {cert.issuer}"
-                if cert.date:
-                    cert_text += f" ({cert.date})"
+
+                # Handle both string and Certification object
+                if isinstance(cert, str):
+                    cert_text = cert
+                else:
+                    cert_text = cert.name if hasattr(cert, 'name') else str(cert)
+                    if hasattr(cert, 'issuer') and cert.issuer:
+                        cert_text += f" - {cert.issuer}"
+                    if hasattr(cert, 'date') and cert.date:
+                        cert_text += f" ({cert.date})"
 
                 run = para.add_run(cert_text)
                 run.font.size = Pt(11)
@@ -600,6 +633,9 @@ class DOCXFormatter:
             output_path: Output file path
         """
         print(f"\nExporting cover letter to DOCX: {output_path}")
+
+        # Create a fresh document for this export
+        self._create_new_document()
 
         # Add name at top
         para_name = self.doc.add_paragraph()

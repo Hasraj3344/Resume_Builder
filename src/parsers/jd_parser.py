@@ -15,10 +15,10 @@ class JDParser:
 
     # Common section headers in job descriptions
     SECTION_HEADERS = {
-        'overview': ['overview', 'about', 'description', 'summary', 'about the role', 'about the position', 'job description', 'role description'],
+        'overview': ['overview', 'about', 'description', 'summary', 'about the role', 'about the position', 'job description', 'role description', 'the opportunity'],
         'responsibilities': ['responsibilities', 'duties', 'what you will do', 'what you\'ll do', 'key responsibilities', 'your responsibilities', 'job responsibilities', 'key duties', 'main responsibilities'],
-        'requirements': ['requirements', 'qualifications', 'what we\'re looking for', 'what we are looking for', 'required qualifications', 'minimum qualifications', 'required skills', 'must have', 'essential skills', 'mandatory skills', 'required experience'],
-        'preferred': ['preferred', 'nice to have', 'bonus', 'preferred qualifications', 'plus', 'desired', 'preferred skills', 'good to have', 'additional skills'],
+        'requirements': ['requirements', 'qualifications', 'what we\'re looking for', 'what we are looking for', 'required qualifications', 'minimum qualifications', 'required skills', 'must have', 'essential skills', 'mandatory skills', 'required experience', 'you have', 'you must have', 'you will have'],
+        'preferred': ['preferred', 'nice to have', 'bonus', 'preferred qualifications', 'plus', 'desired', 'preferred skills', 'good to have', 'additional skills', 'nice if you have'],
         'benefits': ['benefits', 'what we offer', 'perks', 'compensation', 'salary', 'package'],
         'about_company': ['about us', 'about the company', 'company overview', 'who we are', 'company description']
     }
@@ -133,14 +133,19 @@ class JDParser:
 
     def _parse_text(self, text: str) -> JobDescription:
         """Parse job description text into structured data."""
+        print(f"[JD PARSER] _parse_text: Starting to parse JD text of length {len(text)}")
+
         # Extract basic information
         job_title = self._extract_job_title(text)
         company = self._extract_company(text)
         location = self._extract_location(text)
         job_type = self._extract_job_type(text)
 
+        print(f"[JD PARSER] Basic info - Title: {job_title}, Company: {company}")
+
         # Identify sections
         sections = self._identify_sections(text)
+        print(f"[JD PARSER] Identified sections: {list(sections.keys())}")
 
         # Parse sections
         overview = sections.get('overview', '')
@@ -148,12 +153,28 @@ class JDParser:
         requirements_text = sections.get('requirements', '')
         preferred_text = sections.get('preferred', '')
 
+        print(f"[JD PARSER] Requirements text length: {len(requirements_text)}")
+        print(f"[JD PARSER] Preferred text length: {len(preferred_text)}")
+        print(f"[JD PARSER] Requirements text preview: {requirements_text[:300] if requirements_text else 'EMPTY'}")
+
         # Extract skills and keywords
         all_text = text.lower()
+        print("[JD PARSER] Extracting required skills...")
         required_skills = self._extract_skills(requirements_text)
+        print("[JD PARSER] Extracting preferred skills...")
         preferred_skills = self._extract_skills(preferred_text)
+
+        # FALLBACK: If no skills found in sections, extract from full text
+        if not required_skills and not preferred_skills:
+            print("[JD PARSER] No skills found in sections, extracting from full text as fallback...")
+            all_skills = self._extract_skills(text)
+            print(f"[JD PARSER] Extracted {len(all_skills)} skills from full text")
+            required_skills = all_skills  # Treat all as required if we can't distinguish
+
         technologies = list(set(required_skills + preferred_skills))
         keywords = self._extract_keywords(text)
+
+        print(f"[JD PARSER] Final counts - Required: {len(required_skills)}, Preferred: {len(preferred_skills)}, Total: {len(technologies)}")
 
         # Extract experience and education requirements
         years_of_experience = self._extract_years_of_experience(text)
@@ -376,7 +397,11 @@ class JDParser:
     def _extract_skills(self, text: str) -> List[str]:
         """Extract technical skills from text."""
         if not text:
+            print("[JD PARSER] _extract_skills: Empty text provided")
             return []
+
+        print(f"[JD PARSER] _extract_skills: Processing text of length {len(text)}")
+        print(f"[JD PARSER] _extract_skills: First 200 chars: {text[:200]}")
 
         text_lower = text.lower()
         found_skills = []
@@ -388,6 +413,9 @@ class JDParser:
             match = pattern.search(text)
             if match:
                 found_skills.append(match.group(0))
+
+        print(f"[JD PARSER] _extract_skills: Found {len(found_skills)} skills from COMMON_SKILLS list")
+        print(f"[JD PARSER] _extract_skills: Skills found: {found_skills[:10]}")
 
         # Look for experience patterns like "X years of Y" or "proficiency in Y"
         skill_patterns = [

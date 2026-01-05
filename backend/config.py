@@ -33,7 +33,14 @@ class Settings(BaseSettings):
     FREE_TIER_LIMIT: int = 3  # 3 resumes per month for free tier
 
     # CORS Settings
-    CORS_ORIGINS: list = ["http://localhost:8501", "https://localhost:8501"]
+    CORS_ORIGINS: list = [
+        "http://localhost:3000",  # React frontend
+        "http://127.0.0.1:3000",  # React frontend (alternative)
+        "http://localhost:8501",  # Streamlit (legacy)
+        "https://localhost:8501",
+        "http://192.168.1.1:3000",  # Local network
+        "*"  # Allow all origins for development
+    ]
 
     # File Storage
     OUTPUT_DIR: str = "./output/users"
